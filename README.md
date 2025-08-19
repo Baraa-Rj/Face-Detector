@@ -34,8 +34,9 @@ pkg-config --modversion opencv4
 
 ## Compilation
 
-### Using CMake (Recommended)
+### Console Version
 
+#### Using CMake (Recommended)
 ```bash
 # Create build directory
 mkdir build
@@ -49,8 +50,12 @@ make
 ./face_detection
 ```
 
-### Manual compilation
+#### Using build script
+```bash
+./build.sh
+```
 
+#### Manual compilation
 ```bash
 g++ -std=c++17 -Wall -Wextra \
     $(pkg-config --cflags opencv4) \
@@ -58,13 +63,38 @@ g++ -std=c++17 -Wall -Wextra \
     $(pkg-config --libs opencv4)
 ```
 
+### Qt GUI Version
+
+#### Using build script (Recommended)
+```bash
+./build_qt.sh
+```
+
+#### Manual CMake build
+```bash
+mkdir build_qt
+cd build_qt
+cmake -f ../CMakeLists_qt.txt ..
+make
+```
+
 ## Usage
 
+### Console Version
 1. Make sure your webcam is connected and accessible
 2. Run the compiled executable: `./face_detection`
 3. The program will open your webcam and start detecting faces
 4. Green rectangles will be drawn around detected faces
 5. Press 'q' to quit the program
+
+### Qt GUI Version
+1. Make sure your webcam is connected and accessible
+2. Run the compiled executable: `./face_detection_qt`
+3. A GUI window will open with camera controls
+4. Click "Start Camera" to begin face detection
+5. Adjust detection sensitivity using the sliders
+6. Real-time face count is displayed in the status bar
+7. Close the window to quit the program
 
 ## Troubleshooting
 
@@ -87,10 +117,19 @@ g++ -std=c++17 -Wall -Wextra \
 
 ## Project Structure
 
-The project contains only the essential files:
+The project contains both console and GUI versions:
 
+### Console Version
 - `main.cpp` - The complete face detection program
 - `CMakeLists.txt` - CMake build configuration
+- `build.sh` - Build script for console version
+
+### Qt GUI Version
+- `main_qt.cpp` - Qt-based GUI face detection program
+- `CMakeLists_qt.txt` - CMake configuration for Qt version
+- `build_qt.sh` - Build script for Qt version
+
+### Common Files
 - `haarcascade_frontalface_alt.xml` - Face detection classifier
 - `README.md` - This documentation
 
