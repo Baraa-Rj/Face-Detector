@@ -13,9 +13,26 @@ int main() {
     
     // Load the Haar cascade classifier for face detection
     cv::CascadeClassifier faceCascade;
-    if (!faceCascade.load("haarcascade_frontalface_alt.xml")) {
+    
+    // Try multiple possible paths for the classifier file
+    std::vector<std::string> classifierPaths = {
+        "haarcascade_frontalface_alt.xml",           // Current directory
+        "../haarcascade_frontalface_alt.xml",        // Parent directory (for build folder)
+        "../../haarcascade_frontalface_alt.xml"      // Two levels up
+    };
+    
+    bool classifierLoaded = false;
+    for (const auto& path : classifierPaths) {
+        if (faceCascade.load(path)) {
+            classifierLoaded = true;
+            std::cout << "Loaded classifier from: " << path << std::endl;
+            break;
+        }
+    }
+    
+    if (!classifierLoaded) {
         std::cerr << "Error: Could not load face cascade classifier!" << std::endl;
-        std::cerr << "Make sure haarcascade_frontalface_alt.xml is in the same directory." << std::endl;
+        std::cerr << "Make sure haarcascade_frontalface_alt.xml is accessible." << std::endl;
         return -1;
     }
     
