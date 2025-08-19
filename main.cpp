@@ -13,7 +13,7 @@ int main() {
     
     // Load the Haar cascade classifier for face detection
     cv::CascadeClassifier faceCascade;
-    if (!faceCascade.load(cv::samples::findFile("haarcascade_frontalface_alt.xml"))) {
+    if (!faceCascade.load("haarcascade_frontalface_alt.xml")) {
         std::cerr << "Error: Could not load face cascade classifier!" << std::endl;
         std::cerr << "Make sure haarcascade_frontalface_alt.xml is in the same directory." << std::endl;
         return -1;
