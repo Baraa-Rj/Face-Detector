@@ -34,7 +34,7 @@ pkg-config --modversion opencv4
 
 ## Compilation
 
-### Option 1: Using CMake (Recommended)
+### Using CMake (Recommended)
 
 ```bash
 # Create build directory
@@ -49,20 +49,7 @@ make
 ./face_detection
 ```
 
-### Option 2: Using Makefile
-
-```bash
-# Build using make
-make
-
-# Run the program
-make run
-
-# Or run directly
-./face_detection
-```
-
-### Option 3: Manual compilation
+### Manual compilation
 
 ```bash
 g++ -std=c++17 -Wall -Wextra \
@@ -97,6 +84,15 @@ g++ -std=c++17 -Wall -Wextra \
 - Ensure OpenCV is properly installed: `pkg-config --modversion opencv4`
 - Check that you have a C++17 compatible compiler
 - Verify all dependencies are installed
+
+## Project Structure
+
+The project contains only the essential files:
+
+- `main.cpp` - The complete face detection program
+- `CMakeLists.txt` - CMake build configuration
+- `haarcascade_frontalface_alt.xml` - Face detection classifier
+- `README.md` - This documentation
 
 ## Code Structure
 
