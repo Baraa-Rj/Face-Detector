@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "Building Face Detection program..."
+echo "Building Face Detection Qt Application..."
 
 # Check if OpenCV is installed
 if ! pkg-config --exists opencv4; then
@@ -20,16 +20,9 @@ if [ $? -eq 0 ]; then
     echo ""
     echo "Build successful!"
     echo ""
-    echo "Available executables:"
-    if [ -f "face_detection" ]; then
-        echo "  Console version: ./build/face_detection"
-    fi
-    if [ -f "face_detection_qt" ]; then
-        echo "  Qt GUI version: ./build/face_detection_qt"
-    fi
+    echo "Executable: ./build/face_detection"
     echo ""
-    echo "To run console version: ./build/face_detection"
-    echo "To run Qt GUI version: ./build/face_detection_qt"
+    echo "To run: ./build/face_detection"
 else
     echo "Build failed!"
     exit 1

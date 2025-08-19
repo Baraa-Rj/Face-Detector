@@ -1,35 +1,38 @@
-# Real-Time Face Detection with OpenCV
+# Real-Time Face Detection with Qt + OpenCV
 
-A simple C++ program that performs real-time face detection using your webcam and OpenCV's Haar cascade classifier.
+A modern C++ Qt application that performs real-time face detection using your webcam and OpenCV's Haar cascade classifier with a professional GUI interface.
 
 ## Features
 
-- Real-time face detection from webcam feed
-- Uses Haar cascade classifier for accurate detection
-- Draws green rectangles around detected faces
-- Simple keyboard control (press 'q' to quit)
-- Basic error handling for camera and classifier loading
+- **Modern Qt GUI**: Professional interface with controls and real-time display
+- **Real-time Detection**: Live webcam face detection using OpenCV
+- **Adjustable Settings**: Sliders for detection sensitivity tuning
+- **Visual Feedback**: Green rectangles around detected faces
+- **Status Display**: Real-time face count and system status
+- **Modular Design**: Clean separation of concerns with low coupling
 
 ## Requirements
 
-- OpenCV 4.x
-- C++17 compatible compiler (GCC 7+, Clang 5+)
-- Webcam
-- Linux/Ubuntu (tested on Ubuntu 20.04+)
+- **Qt6**: Core and Widgets modules
+- **OpenCV 4.x**: Computer vision library
+- **C++17**: Compatible compiler (GCC 7+, Clang 5+)
+- **Webcam**: Default camera device
+- **Linux/Ubuntu**: Tested on Ubuntu 20.04+
 
 ## Installation
 
-### Install OpenCV and dependencies
+### Install Qt6, OpenCV and dependencies
 
 ```bash
 # Update package list
 sudo apt-get update
 
-# Install OpenCV development libraries
-sudo apt-get install -y libopencv-dev pkg-config
+# Install Qt6 and OpenCV development libraries
+sudo apt-get install -y qt6-base-dev qt6-tools-dev libopencv-dev pkg-config
 
-# Verify installation
+# Verify installations
 pkg-config --modversion opencv4
+qmake6 --version
 ```
 
 ## Compilation
@@ -107,37 +110,51 @@ g++ -std=c++17 -Wall -Wextra \
 
 ## Project Structure
 
-The project contains both console and GUI versions in a unified build system:
+The project uses a modular design with low coupling between components:
 
-### Core Files
-- `main.cpp` - Console version of face detection
-- `main_qt.cpp` - Qt GUI version of face detection
-- `CMakeLists.txt` - Unified build configuration for both versions
-- `build.sh` - Single build script for both versions
+### Core Classes
+- `main.cpp` - Application entry point
+- `MainWindow.h/.cpp` - Main GUI window and user interface
+- `FaceDetector.h/.cpp` - Face detection logic and OpenCV integration
+- `CameraManager.h/.cpp` - Camera operations and video capture
 
-### Common Files
+### Configuration Files
+- `CMakeLists.txt` - Qt + OpenCV build configuration
+- `build.sh` - Build script
 - `haarcascade_frontalface_alt.xml` - Face detection classifier
 - `README.md` - This documentation
 
-## Code Structure
+### Architecture Benefits
+- **Low Coupling**: Each class has a single responsibility
+- **High Cohesion**: Related functionality grouped together
+- **Easy Testing**: Components can be tested independently
+- **Maintainable**: Changes to one component don't affect others
 
-The program consists of a single `main.cpp` file with the following key components:
+## Class Responsibilities
 
-1. **Camera initialization**: Opens the default webcam
-2. **Classifier loading**: Loads the Haar cascade face detector
-3. **Main loop**: Captures frames, detects faces, and displays results
-4. **Face detection**: Uses `detectMultiScale()` with optimized parameters
-5. **Visualization**: Draws rectangles around detected faces
-6. **Cleanup**: Properly releases resources
+### FaceDetector
+- Loads and manages Haar cascade classifier
+- Processes frames for face detection
+- Draws detection rectangles
+- Configurable detection parameters
 
-## Key OpenCV Functions Used
+### CameraManager
+- Manages camera lifecycle (open/close)
+- Captures video frames
+- Handles camera errors and properties
+- Emits Qt signals for camera events
 
-- `cv::VideoCapture`: Camera interface
-- `cv::CascadeClassifier`: Face detection classifier
-- `cv::cvtColor`: Color space conversion
-- `cv::detectMultiScale`: Multi-scale object detection
-- `cv::rectangle`: Drawing rectangles
-- `cv::imshow`: Display images
+### MainWindow
+- Creates and manages Qt GUI interface
+- Handles user interactions (buttons, sliders)
+- Displays video feed and detection results
+- Coordinates between camera and detector components
+
+## Key Technologies Used
+
+- **Qt6**: Modern GUI framework with signals/slots
+- **OpenCV**: Computer vision and camera operations
+- **C++17**: Modern C++ features and RAII principles
 
 ## License
 
