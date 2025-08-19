@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+#include "../Headers/MainWindow.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QStatusBar>

@@ -16,17 +16,17 @@ find_package(OpenCV REQUIRED)
 
 # Source files
 set(SOURCES
-    main.cpp
-    MainWindow.cpp
-    FaceDetector.cpp
-    CameraManager.cpp
+    src/main.cpp
+    src/MainWindow.cpp
+    src/FaceDetector.cpp
+    src/CameraManager.cpp
 )
 
 # Header files
 set(HEADERS
-    MainWindow.h
-    FaceDetector.h
-    CameraManager.h
+    Headers/MainWindow.h
+    Headers/FaceDetector.h
+    Headers/CameraManager.h
 )
 
 # Create executable

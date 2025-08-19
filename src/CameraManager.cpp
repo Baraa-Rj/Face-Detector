@@ -1,4 +1,4 @@
-#include "CameraManager.h"
+#include "../Headers/CameraManager.h"
 #include <iostream>
 
 CameraManager::CameraManager(QObject* parent)

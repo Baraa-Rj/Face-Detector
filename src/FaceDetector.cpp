@@ -1,4 +1,4 @@
-#include "FaceDetector.h"
+#include "../Headers/FaceDetector.h"
 #include <iostream>
 
 FaceDetector::FaceDetector()

@@ -110,19 +110,30 @@ g++ -std=c++17 -Wall -Wextra \
 
 ## Project Structure
 
-The project uses a modular design with low coupling between components:
+The project uses a modular design with low coupling between components, organized in a clean directory structure:
+
+### Directory Organization
+```
+faceDetection/
+├── Headers/                    # Header files (.h)
+│   ├── MainWindow.h           # Main GUI window interface
+│   ├── FaceDetector.h         # Face detection interface
+│   └── CameraManager.h        # Camera operations interface
+├── src/                        # Source files (.cpp)
+│   ├── main.cpp               # Application entry point
+│   ├── MainWindow.cpp         # Main GUI window implementation
+│   ├── FaceDetector.cpp       # Face detection implementation
+│   └── CameraManager.cpp      # Camera operations implementation
+├── CMakeLists.txt              # Qt + OpenCV build configuration
+├── build.sh                    # Build script
+├── haarcascade_frontalface_alt.xml  # Face detection classifier
+└── README.md                   # This documentation
+```
 
 ### Core Classes
-- `main.cpp` - Application entry point
-- `MainWindow.h/.cpp` - Main GUI window and user interface
-- `FaceDetector.h/.cpp` - Face detection logic and OpenCV integration
-- `CameraManager.h/.cpp` - Camera operations and video capture
-
-### Configuration Files
-- `CMakeLists.txt` - Qt + OpenCV build configuration
-- `build.sh` - Build script
-- `haarcascade_frontalface_alt.xml` - Face detection classifier
-- `README.md` - This documentation
+- **MainWindow**: Main GUI window and user interface
+- **FaceDetector**: Face detection logic and OpenCV integration
+- **CameraManager**: Camera operations and video capture
 
 ### Architecture Benefits
 - **Low Coupling**: Each class has a single responsibility
