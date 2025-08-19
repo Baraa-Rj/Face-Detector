@@ -1,3 +1,0 @@
-/home/dark/Desktop/faceDetection/build/CMakeFiles/face_detection.dir
-/home/dark/Desktop/faceDetection/build/CMakeFiles/edit_cache.dir
-/home/dark/Desktop/faceDetection/build/CMakeFiles/rebuild_cache.dir
