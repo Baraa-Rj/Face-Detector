@@ -30,10 +30,10 @@ std::vector<cv::Rect> FaceDetector::detectFaces(const cv::Mat& frame) {
     m_faceCascade.detectMultiScale(
         gray, 
         faces, 
-        1.1,        // Scale factor - optimal for most cases
-        3,           // Min neighbors - good balance of accuracy/sensitivity
-        0,           // Flags
-        cv::Size(30, 30)  // Min size - reasonable minimum face size
+        1.1,
+        3,
+        0,
+        cv::Size(30, 30)
     );
     
     return faces;

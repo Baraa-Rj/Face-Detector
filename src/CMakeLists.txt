@@ -1,9 +1,5 @@
-# Source Directory CMakeLists.txt
-# This is a placeholder file for organizational purposes
-# The actual build configuration is handled in the main CMakeLists.txt
+cmake_minimum_required(VERSION 3.16)
+project(src)
 
-# Source files in this directory:
-# - main.cpp
-# - MainWindow.cpp
-# - FaceDetector.cpp
-# - CameraManager.cpp
+add_library(src INTERFACE)
+target_include_directories(src INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -3,9 +3,9 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QPushButton>
-#include <QTimer>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <chrono>
 #include <opencv2/opencv.hpp>
 
 #include "FaceDetector.h"
@@ -22,6 +22,7 @@ private slots:
     void processFrame();
     void toggleCamera();
     void onCameraError(const QString& message);
+    void startFrameProcessing();
 
 private:
     void setupUI();
@@ -32,18 +33,18 @@ private:
     QImage matToQImage(const cv::Mat& mat) const;
 
 private:
-    // UI Components
     QWidget* m_centralWidget;
     QLabel* m_videoLabel;
     QLabel* m_statusLabel;
     QPushButton* m_startButton;
-    QTimer* m_frameTimer;
     
-    // Core Components
     FaceDetector m_faceDetector;
     CameraManager m_cameraManager;
     
-    // State
     bool m_cameraRunning;
     int m_faceCount;
+    
+    std::chrono::steady_clock::time_point m_startTime;
+    std::chrono::steady_clock::time_point m_lastFrameTime;
+    static constexpr int FRAME_INTERVAL_MS = 33;
 };

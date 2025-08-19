@@ -1,8 +1,5 @@
-# Headers Directory CMakeLists.txt
-# This is a placeholder file for organizational purposes
-# The actual build configuration is handled in the main CMakeLists.txt
+cmake_minimum_required(VERSION 3.16)
+project(Headers)
 
-# Header files in this directory:
-# - MainWindow.h
-# - FaceDetector.h  
-# - CameraManager.h
+add_library(Headers INTERFACE)
+target_include_directories(Headers INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
