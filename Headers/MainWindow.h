@@ -3,8 +3,6 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QPushButton>
-#include <QSlider>
-#include <QGroupBox>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -23,8 +21,6 @@ public:
 private slots:
     void processFrame();
     void toggleCamera();
-    void updateScaleFactor(int value);
-    void updateMinNeighbors(int value);
     void onCameraError(const QString& message);
 
 private:
@@ -41,8 +37,6 @@ private:
     QLabel* m_videoLabel;
     QLabel* m_statusLabel;
     QPushButton* m_startButton;
-    QLabel* m_scaleLabel;
-    QLabel* m_neighborsLabel;
     QTimer* m_frameTimer;
     
     // Core Components

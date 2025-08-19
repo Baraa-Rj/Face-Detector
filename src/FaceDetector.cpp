@@ -1,11 +1,7 @@
 #include "../Headers/FaceDetector.h"
 #include <iostream>
 
-FaceDetector::FaceDetector()
-    : m_scaleFactor(1.1)
-    , m_minNeighbors(3)
-    , m_minSize(30, 30)
-{
+FaceDetector::FaceDetector() {
 }
 
 bool FaceDetector::loadClassifier() {
@@ -34,10 +30,10 @@ std::vector<cv::Rect> FaceDetector::detectFaces(const cv::Mat& frame) {
     m_faceCascade.detectMultiScale(
         gray, 
         faces, 
-        m_scaleFactor, 
-        m_minNeighbors, 
-        0, 
-        m_minSize
+        1.1,        // Scale factor - optimal for most cases
+        3,           // Min neighbors - good balance of accuracy/sensitivity
+        0,           // Flags
+        cv::Size(30, 30)  // Min size - reasonable minimum face size
     );
     
     return faces;
@@ -47,18 +43,6 @@ void FaceDetector::drawFaceRectangles(cv::Mat& frame, const std::vector<cv::Rect
     for (const auto& face : faces) {
         cv::rectangle(frame, face, cv::Scalar(0, 255, 0), 2);
     }
-}
-
-void FaceDetector::setScaleFactor(double scaleFactor) {
-    m_scaleFactor = scaleFactor;
-}
-
-void FaceDetector::setMinNeighbors(int minNeighbors) {
-    m_minNeighbors = minNeighbors;
-}
-
-void FaceDetector::setMinSize(const cv::Size& minSize) {
-    m_minSize = minSize;
 }
 
 std::vector<std::string> FaceDetector::getClassifierPaths() const {

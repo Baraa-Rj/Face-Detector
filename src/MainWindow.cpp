@@ -9,8 +9,6 @@ MainWindow::MainWindow(QWidget* parent)
     , m_videoLabel(nullptr)
     , m_statusLabel(nullptr)
     , m_startButton(nullptr)
-    , m_scaleLabel(nullptr)
-    , m_neighborsLabel(nullptr)
     , m_frameTimer(new QTimer(this))
     , m_cameraManager(this)
     , m_cameraRunning(false)
@@ -47,39 +45,7 @@ void MainWindow::setupUI() {
     m_startButton->setStyleSheet("QPushButton { background-color: #51cf66; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
     m_startButton->setMinimumHeight(40);
     
-    // Settings group
-    QGroupBox* settingsGroup = new QGroupBox("Detection Settings");
-    QVBoxLayout* settingsLayout = new QVBoxLayout(settingsGroup);
-    
-    // Scale factor slider
-    QHBoxLayout* scaleLayout = new QHBoxLayout();
-    QLabel* scaleTitle = new QLabel("Scale Factor:");
-    QSlider* scaleSlider = new QSlider(Qt::Horizontal);
-    scaleSlider->setRange(5, 50);
-    scaleSlider->setValue(10);
-    m_scaleLabel = new QLabel("Scale: 1.10");
-    
-    scaleLayout->addWidget(scaleTitle);
-    scaleLayout->addWidget(scaleSlider);
-    scaleLayout->addWidget(m_scaleLabel);
-    
-    // Min neighbors slider
-    QHBoxLayout* neighborsLayout = new QHBoxLayout();
-    QLabel* neighborsTitle = new QLabel("Min Neighbors:");
-    QSlider* neighborsSlider = new QSlider(Qt::Horizontal);
-    neighborsSlider->setRange(1, 10);
-    neighborsSlider->setValue(3);
-    m_neighborsLabel = new QLabel("Min Neighbors: 3");
-    
-    neighborsLayout->addWidget(neighborsTitle);
-    neighborsLayout->addWidget(neighborsSlider);
-    neighborsLayout->addWidget(m_neighborsLabel);
-    
-    settingsLayout->addLayout(scaleLayout);
-    settingsLayout->addLayout(neighborsLayout);
-    
     controlLayout->addWidget(m_startButton);
-    controlLayout->addWidget(settingsGroup);
     controlLayout->addStretch();
     
     // Status bar
@@ -89,10 +55,6 @@ void MainWindow::setupUI() {
     mainLayout->addWidget(m_videoLabel);
     mainLayout->addLayout(controlLayout);
     mainLayout->addWidget(m_statusLabel);
-    
-    // Connect slider signals
-    connect(scaleSlider, &QSlider::valueChanged, this, &MainWindow::updateScaleFactor);
-    connect(neighborsSlider, &QSlider::valueChanged, this, &MainWindow::updateMinNeighbors);
 }
 
 void MainWindow::setupConnections() {
@@ -171,17 +133,6 @@ QImage MainWindow::matToQImage(const cv::Mat& mat) const {
     cv::cvtColor(mat, rgbMat, cv::COLOR_BGR2RGB);
     
     return QImage(rgbMat.data, rgbMat.cols, rgbMat.rows, rgbMat.step, QImage::Format_RGB888);
-}
-
-void MainWindow::updateScaleFactor(int value) {
-    double scaleFactor = 1.0 + value / 100.0;
-    m_faceDetector.setScaleFactor(scaleFactor);
-    m_scaleLabel->setText(QString("Scale: %1").arg(scaleFactor, 0, 'f', 2));
-}
-
-void MainWindow::updateMinNeighbors(int value) {
-    m_faceDetector.setMinNeighbors(value);
-    m_neighborsLabel->setText(QString("Min Neighbors: %1").arg(value));
 }
 
 void MainWindow::onCameraError(const QString& message) {
