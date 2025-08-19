@@ -2,6 +2,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QStatusBar>
+#include <iostream> // Added for debugging
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -119,9 +120,23 @@ void MainWindow::stopCamera() {
 }
 
 void MainWindow::updateVideoDisplay(const cv::Mat& frame) {
+    if (frame.empty()) {
+        return;
+    }
+    
     QImage qimg = matToQImage(frame);
+    if (qimg.isNull()) {
+        return;
+    }
+    
     QPixmap pixmap = QPixmap::fromImage(qimg);
-    m_videoLabel->setPixmap(pixmap.scaled(m_videoLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    if (pixmap.isNull()) {
+        return;
+    }
+    
+    // Scale the pixmap to fit the label while maintaining aspect ratio
+    QPixmap scaledPixmap = pixmap.scaled(m_videoLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    m_videoLabel->setPixmap(scaledPixmap);
 }
 
 QImage MainWindow::matToQImage(const cv::Mat& mat) const {
@@ -129,10 +144,16 @@ QImage MainWindow::matToQImage(const cv::Mat& mat) const {
         return QImage();
     }
     
+    // Convert BGR to RGB
     cv::Mat rgbMat;
     cv::cvtColor(mat, rgbMat, cv::COLOR_BGR2RGB);
     
-    return QImage(rgbMat.data, rgbMat.cols, rgbMat.rows, rgbMat.step, QImage::Format_RGB888);
+    // Create QImage with proper data handling
+    QImage qimg(rgbMat.data, rgbMat.cols, rgbMat.rows, 
+                static_cast<int>(rgbMat.step), QImage::Format_RGB888);
+    
+    // Create a deep copy to ensure data ownership
+    return qimg.copy();
 }
 
 void MainWindow::onCameraError(const QString& message) {

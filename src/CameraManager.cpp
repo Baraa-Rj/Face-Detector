@@ -21,6 +21,12 @@ bool CameraManager::openCamera(int cameraIndex) {
         return false;
     }
     
+    // Set camera properties for better performance
+    m_camera.set(cv::CAP_PROP_FRAME_WIDTH, 640);
+    m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
+    m_camera.set(cv::CAP_PROP_FPS, 30);
+    m_camera.set(cv::CAP_PROP_BUFFERSIZE, 1);
+    
     return true;
 }
 
@@ -41,11 +47,16 @@ cv::Mat CameraManager::captureFrame() {
         return frame;
     }
     
+    // Read frame
     m_camera >> frame;
     
     if (frame.empty()) {
-        emit cameraError("Failed to capture frame");
         return frame;
+    }
+    
+    // Verify frame dimensions
+    if (frame.cols <= 0 || frame.rows <= 0) {
+        return cv::Mat();
     }
     
     emit frameReady(frame);
