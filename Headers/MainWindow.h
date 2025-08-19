@@ -44,7 +44,6 @@ private:
     bool m_cameraRunning;
     int m_faceCount;
     
-    std::chrono::steady_clock::time_point m_startTime;
     std::chrono::steady_clock::time_point m_lastFrameTime;
     static constexpr int FRAME_INTERVAL_MS = 33;
 };

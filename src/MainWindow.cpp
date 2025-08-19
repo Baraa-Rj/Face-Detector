@@ -13,7 +13,6 @@ MainWindow::MainWindow(QWidget* parent)
     , m_cameraManager(this)
     , m_cameraRunning(false)
     , m_faceCount(0)
-    , m_startTime(std::chrono::steady_clock::now())
     , m_lastFrameTime(std::chrono::steady_clock::now())
 {
     setupUI();
@@ -93,8 +92,7 @@ void MainWindow::toggleCamera() {
 void MainWindow::startCamera() {
     if (m_cameraManager.openCamera(0)) {
         m_cameraRunning = true;
-        m_startTime = std::chrono::steady_clock::now();
-        m_lastFrameTime = m_startTime;
+        m_lastFrameTime = std::chrono::steady_clock::now();
         
         m_startButton->setText("Stop Camera");
         m_startButton->setStyleSheet("QPushButton { background-color: #ff6b6b; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
@@ -142,10 +140,6 @@ void MainWindow::updateVideoDisplay(const cv::Mat& frame) {
     }
     
     QPixmap pixmap = QPixmap::fromImage(qimg);
-    if (pixmap.isNull()) {
-        return;
-    }
-    
     QPixmap scaledPixmap = pixmap.scaled(m_videoLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     m_videoLabel->setPixmap(scaledPixmap);
 }

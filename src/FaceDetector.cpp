@@ -8,7 +8,7 @@ bool FaceDetector::loadClassifier() {
     auto paths = getClassifierPaths();
     
     for (const auto& path : paths) {
-        if (m_faceCascade.load(path)) {
+        if (tryLoadClassifierFromPath(path)) {
             std::cout << "Loaded classifier from: " << path << std::endl;
             return true;
         }
@@ -16,6 +16,10 @@ bool FaceDetector::loadClassifier() {
     
     std::cerr << "Error: Could not load face cascade classifier!" << std::endl;
     return false;
+}
+
+bool FaceDetector::tryLoadClassifierFromPath(const std::string& path) {
+    return m_faceCascade.load(path);
 }
 
 std::vector<cv::Rect> FaceDetector::detectFaces(const cv::Mat& frame) {

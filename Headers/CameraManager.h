@@ -22,9 +22,10 @@ public:
 
 signals:
     void cameraError(const QString& message);
-    void frameReady(const cv::Mat& frame);
 
 private:
+    bool isCameraValid() const;
+    
     cv::VideoCapture m_camera;
     int m_cameraIndex;
 };

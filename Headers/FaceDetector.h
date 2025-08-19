@@ -14,7 +14,8 @@ public:
     void drawFaceRectangles(cv::Mat& frame, const std::vector<cv::Rect>& faces) const;
 
 private:
-    cv::CascadeClassifier m_faceCascade;
-    
+    bool tryLoadClassifierFromPath(const std::string& path);
     std::vector<std::string> getClassifierPaths() const;
+    
+    cv::CascadeClassifier m_faceCascade;
 };

@@ -24,7 +24,6 @@ bool CameraManager::openCamera(int cameraIndex) {
     m_camera.set(cv::CAP_PROP_FRAME_WIDTH, 640);
     m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
     m_camera.set(cv::CAP_PROP_FPS, 30);
-    m_camera.set(cv::CAP_PROP_BUFFERSIZE, 1);
     
     return true;
 }
@@ -39,29 +38,28 @@ bool CameraManager::isOpened() const {
     return m_camera.isOpened();
 }
 
+bool CameraManager::isCameraValid() const {
+    return m_camera.isOpened();
+}
+
 cv::Mat CameraManager::captureFrame() {
     cv::Mat frame;
     
-    if (!m_camera.isOpened()) {
+    if (!isCameraValid()) {
         return frame;
     }
     
     m_camera >> frame;
     
-    if (frame.empty()) {
-        return frame;
-    }
-    
-    if (frame.cols <= 0 || frame.rows <= 0) {
+    if (frame.empty() || frame.cols <= 0 || frame.rows <= 0) {
         return cv::Mat();
     }
     
-    emit frameReady(frame);
     return frame;
 }
 
 cv::Size CameraManager::getFrameSize() const {
-    if (!m_camera.isOpened()) {
+    if (!isCameraValid()) {
         return cv::Size(0, 0);
     }
     
@@ -72,7 +70,7 @@ cv::Size CameraManager::getFrameSize() const {
 }
 
 bool CameraManager::setCameraProperty(int property, double value) {
-    if (!m_camera.isOpened()) {
+    if (!isCameraValid()) {
         return false;
     }
     
@@ -80,7 +78,7 @@ bool CameraManager::setCameraProperty(int property, double value) {
 }
 
 double CameraManager::getCameraProperty(int property) const {
-    if (!m_camera.isOpened()) {
+    if (!isCameraValid()) {
         return -1.0;
     }
     
