@@ -14,23 +14,19 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets)
 find_package(OpenCV REQUIRED)
 
-# Source files
-set(SOURCES
+# Subdirectories contain placeholder CMakeLists.txt files for organization
+# They don't affect the build process
+
+# Create executable
+add_executable(face_detection 
     src/main.cpp
     src/MainWindow.cpp
     src/FaceDetector.cpp
     src/CameraManager.cpp
-)
-
-# Header files
-set(HEADERS
     Headers/MainWindow.h
     Headers/FaceDetector.h
     Headers/CameraManager.h
 )
-
-# Create executable
-add_executable(face_detection ${SOURCES} ${HEADERS})
 
 # Link libraries
 target_link_libraries(face_detection 
@@ -40,4 +36,7 @@ target_link_libraries(face_detection
 )
 
 # Include directories
-target_include_directories(face_detection PRIVATE ${OpenCV_INCLUDE_DIRS})
+target_include_directories(face_detection PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/Headers
+    ${OpenCV_INCLUDE_DIRS}
+)
