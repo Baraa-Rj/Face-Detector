@@ -34,9 +34,18 @@ pkg-config --modversion opencv4
 
 ## Compilation
 
-### Console Version
+### Unified Build System
 
-#### Using CMake (Recommended)
+The project now uses a single build system for both versions:
+
+#### Using build script (Recommended)
+```bash
+./build.sh
+```
+
+This will build both the console and Qt GUI versions (if Qt6 is available).
+
+#### Manual CMake build
 ```bash
 # Create build directory
 mkdir build
@@ -46,36 +55,17 @@ cd build
 cmake ..
 make
 
-# Run the program
-./face_detection
+# Available executables:
+# - face_detection (console version)
+# - face_detection_qt (Qt GUI version, if Qt6 found)
 ```
 
-#### Using build script
-```bash
-./build.sh
-```
-
-#### Manual compilation
+#### Manual compilation (Console only)
 ```bash
 g++ -std=c++17 -Wall -Wextra \
     $(pkg-config --cflags opencv4) \
     -o face_detection main.cpp \
     $(pkg-config --libs opencv4)
-```
-
-### Qt GUI Version
-
-#### Using build script (Recommended)
-```bash
-./build_qt.sh
-```
-
-#### Manual CMake build
-```bash
-mkdir build_qt
-cd build_qt
-cmake -f ../CMakeLists_qt.txt ..
-make
 ```
 
 ## Usage
@@ -117,17 +107,13 @@ make
 
 ## Project Structure
 
-The project contains both console and GUI versions:
+The project contains both console and GUI versions in a unified build system:
 
-### Console Version
-- `main.cpp` - The complete face detection program
-- `CMakeLists.txt` - CMake build configuration
-- `build.sh` - Build script for console version
-
-### Qt GUI Version
-- `main_qt.cpp` - Qt-based GUI face detection program
-- `CMakeLists_qt.txt` - CMake configuration for Qt version
-- `build_qt.sh` - Build script for Qt version
+### Core Files
+- `main.cpp` - Console version of face detection
+- `main_qt.cpp` - Qt GUI version of face detection
+- `CMakeLists.txt` - Unified build configuration for both versions
+- `build.sh` - Single build script for both versions
 
 ### Common Files
 - `haarcascade_frontalface_alt.xml` - Face detection classifier
