@@ -8,6 +8,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <functional>
+#include <limits>
 
 #include "FaceDetector.h"
 #include "CameraManager.h"
@@ -31,6 +32,7 @@ public:
 
 private:
     void processFrames();
+    bool isValidCameraIndex(int index) const;
     
     CameraManager m_cameraManager;
     FaceDetector m_faceDetector;
@@ -49,7 +51,9 @@ private:
     // Synchronization
     std::condition_variable m_frameCondition;
     static constexpr int FRAME_INTERVAL_MS = 33; // ~30 FPS
+    static constexpr int MAX_CAMERA_INDEX = 10; // Reasonable limit
     
     // Callback for frame updates
     std::function<void()> m_frameUpdateCallback;
+    mutable std::mutex m_callbackMutex; // Protect callback access
 };

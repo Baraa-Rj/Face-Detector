@@ -1,6 +1,7 @@
 #include "../Headers/FrameProcessor.h"
 #include <iostream>
 #include <chrono>
+#include <stdexcept>
 
 FrameProcessor::FrameProcessor()
     : m_isProcessing(false)
@@ -25,8 +26,18 @@ FrameProcessor::~FrameProcessor() {
     }
 }
 
+bool FrameProcessor::isValidCameraIndex(int index) const {
+    return index >= 0 && index < MAX_CAMERA_INDEX;
+}
+
 void FrameProcessor::startProcessing() {
     if (m_isProcessing) {
+        return;
+    }
+    
+    // Validate camera index before opening
+    if (!isValidCameraIndex(0)) {
+        std::cerr << "Invalid camera index: 0" << std::endl;
         return;
     }
     
@@ -82,6 +93,7 @@ int FrameProcessor::getFaceCount() const {
 }
 
 void FrameProcessor::setFrameUpdateCallback(std::function<void()> callback) {
+    std::lock_guard<std::mutex> locker(m_callbackMutex);
     m_frameUpdateCallback = callback;
 }
 
@@ -95,19 +107,32 @@ void FrameProcessor::processFrames() {
         if (!frame.empty()) {
             std::vector<cv::Rect> faces = m_faceDetector.detectFaces(frame);
             
-            cv::Mat processedFrame = frame.clone();
+            // Process frame data first, then lock mutex for minimal time
+            cv::Mat processedFrame;
+            frame.copyTo(processedFrame); // More efficient than clone()
             m_faceDetector.drawFaceRectangles(processedFrame, faces);
             
+            // Lock mutex only for data update
             {
                 std::lock_guard<std::mutex> locker(m_frameMutex);
-                m_latestFrame = processedFrame;
+                m_latestFrame = std::move(processedFrame); // Use move for efficiency
                 m_latestFaces = faces;
                 m_faceCount = static_cast<int>(faces.size());
             }
             
-            // Notify through callback if set
-            if (m_frameUpdateCallback) {
-                m_frameUpdateCallback();
+            // Safely call callback with protection
+            std::function<void()> callback;
+            {
+                std::lock_guard<std::mutex> locker(m_callbackMutex);
+                callback = m_frameUpdateCallback;
+            }
+            
+            if (callback) {
+                try {
+                    callback();
+                } catch (const std::exception& e) {
+                    std::cerr << "Callback error: " << e.what() << std::endl;
+                }
             }
         }
         

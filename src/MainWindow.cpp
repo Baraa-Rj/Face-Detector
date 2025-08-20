@@ -11,7 +11,7 @@ MainWindow::MainWindow(QWidget* parent)
     , m_videoLabel(nullptr)
     , m_statusLabel(nullptr)
     , m_startButton(nullptr)
-    , m_frameProcessor(new FrameProcessor())
+    , m_frameProcessor(std::make_unique<FrameProcessor>())
     , m_cameraRunning(false)
     , m_faceCount(0)
 {
@@ -29,7 +29,7 @@ MainWindow::~MainWindow() {
     if (m_cameraRunning) {
         stopCamera();
     }
-    delete m_frameProcessor;
+    // Smart pointer automatically cleans up
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {

@@ -1,12 +1,28 @@
 #include "../Headers/CameraManager.h"
 #include <iostream>
+#include <stdexcept>
 
 CameraManager::CameraManager()
     : m_cameraIndex(0)
 {
 }
 
+bool CameraManager::isValidCameraIndex(int cameraIndex) const {
+    return cameraIndex >= 0 && cameraIndex < MAX_CAMERA_INDEX;
+}
+
+bool CameraManager::isValidProperty(int property) const {
+    // Check if property is within valid OpenCV camera property range
+    return property >= 0 && property <= 100; // OpenCV property range
+}
+
 bool CameraManager::openCamera(int cameraIndex) {
+    // Input validation
+    if (!isValidCameraIndex(cameraIndex)) {
+        std::cerr << "Invalid camera index: " << cameraIndex << " (max: " << MAX_CAMERA_INDEX - 1 << ")" << std::endl;
+        return false;
+    }
+    
     m_cameraIndex = cameraIndex;
     
     if (m_camera.isOpened()) {
@@ -20,9 +36,12 @@ bool CameraManager::openCamera(int cameraIndex) {
         return false;
     }
     
-    m_camera.set(cv::CAP_PROP_FRAME_WIDTH, 640);
-    m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, 480);
-    m_camera.set(cv::CAP_PROP_FPS, 30);
+    // Set camera properties with validation
+    if (!m_camera.set(cv::CAP_PROP_FRAME_WIDTH, 640) ||
+        !m_camera.set(cv::CAP_PROP_FRAME_HEIGHT, 480) ||
+        !m_camera.set(cv::CAP_PROP_FPS, 30)) {
+        std::cerr << "Warning: Could not set all camera properties" << std::endl;
+    }
     
     return true;
 }
@@ -45,7 +64,8 @@ cv::Mat CameraManager::captureFrame() {
     cv::Mat frame;
     m_camera >> frame;
     
-    if (frame.empty() || frame.cols <= 0 || frame.rows <= 0) {
+    // Simplified validation - frame.empty() already checks dimensions
+    if (frame.empty()) {
         return cv::Mat();
     }
     
@@ -68,11 +88,21 @@ bool CameraManager::setCameraProperty(int property, double value) {
         return false;
     }
     
+    if (!isValidProperty(property)) {
+        std::cerr << "Invalid camera property: " << property << std::endl;
+        return false;
+    }
+    
     return m_camera.set(property, value);
 }
 
 double CameraManager::getCameraProperty(int property) const {
     if (!m_camera.isOpened()) {
+        return -1.0;
+    }
+    
+    if (!isValidProperty(property)) {
+        std::cerr << "Invalid camera property: " << property << std::endl;
         return -1.0;
     }
     

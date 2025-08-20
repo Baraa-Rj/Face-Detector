@@ -18,6 +18,17 @@ public:
     double getCameraProperty(int property) const;
 
 private:
+    bool isValidCameraIndex(int cameraIndex) const;
+    bool isValidProperty(int property) const;
+    
     cv::VideoCapture m_camera;
     int m_cameraIndex;
+    
+    static constexpr int MAX_CAMERA_INDEX = 10;
+    static constexpr int MIN_FRAME_WIDTH = 320;
+    static constexpr int MAX_FRAME_WIDTH = 1920;
+    static constexpr int MIN_FRAME_HEIGHT = 240;
+    static constexpr int MAX_FRAME_HEIGHT = 1080;
+    static constexpr int MIN_FPS = 1;
+    static constexpr int MAX_FPS = 60;
 };

@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QCloseEvent>
 #include <opencv2/opencv.hpp>
+#include <memory>
 
 // Forward declaration - Qt-free interface
 class FrameProcessor;
@@ -39,8 +40,8 @@ private:
     QLabel* m_statusLabel;
     QPushButton* m_startButton;
     
-    // Pure C++ processor (no Qt dependencies)
-    FrameProcessor* m_frameProcessor;
+    // Use smart pointer for automatic cleanup
+    std::unique_ptr<FrameProcessor> m_frameProcessor;
     
     bool m_cameraRunning;
     int m_faceCount;
