@@ -5,11 +5,10 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <chrono>
+#include <QTimer>
 #include <opencv2/opencv.hpp>
 
-#include "FaceDetector.h"
-#include "CameraManager.h"
+#include "FrameProcessor.h"
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -19,10 +18,10 @@ public:
     ~MainWindow() = default;
 
 private slots:
-    void processFrame();
     void toggleCamera();
-    void onCameraError(const QString& message);
-    void startFrameProcessing();
+    void onFrameProcessed();
+    void onProcessingError(const QString& message);
+    void updateDisplay();
 
 private:
     void setupUI();
@@ -38,12 +37,9 @@ private:
     QLabel* m_statusLabel;
     QPushButton* m_startButton;
     
-    FaceDetector m_faceDetector;
-    CameraManager m_cameraManager;
+    FrameProcessor m_frameProcessor;
+    QTimer m_displayTimer;
     
     bool m_cameraRunning;
     int m_faceCount;
-    
-    std::chrono::steady_clock::time_point m_lastFrameTime;
-    static constexpr int FRAME_INTERVAL_MS = 33;
 };

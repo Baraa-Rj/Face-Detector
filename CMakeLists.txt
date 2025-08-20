@@ -23,9 +23,11 @@ add_executable(face_detection
     src/MainWindow.cpp
     src/FaceDetector.cpp
     src/CameraManager.cpp
+    src/FrameProcessor.cpp
     Headers/MainWindow.h
     Headers/FaceDetector.h
     Headers/CameraManager.h
+    Headers/FrameProcessor.h
 )
 
 # Link libraries
