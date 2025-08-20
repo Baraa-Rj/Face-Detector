@@ -15,7 +15,6 @@ public:
 
 private:
     bool tryLoadClassifierFromPath(const std::string& path);
-    std::vector<std::string> getClassifierPaths() const;
     
-    cv::CascadeClassifier m_faceCascade;
+    cv::CascadeClassifier faceCascadeClassifier;
 };

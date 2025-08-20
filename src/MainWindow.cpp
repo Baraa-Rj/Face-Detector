@@ -1,82 +1,80 @@
 #include "../Headers/MainWindow.h"
 #include "../Headers/FrameProcessor.h"
 #include <QApplication>
-#include <QMessageBox>
-#include <QStatusBar>
-#include <QCloseEvent>
+#include <QImage>
+#include <QPixmap>
+#include <iostream>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
-    , m_centralWidget(nullptr)
-    , m_videoLabel(nullptr)
-    , m_statusLabel(nullptr)
-    , m_startButton(nullptr)
-    , m_frameProcessor(std::make_unique<FrameProcessor>())
-    , m_cameraRunning(false)
-    , m_faceCount(0)
+    , centralWidget(nullptr)
+    , videoLabel(nullptr)
+    , statusLabel(nullptr)
+    , startButton(nullptr)
+    , frameProcessor(std::make_unique<FrameProcessor>())
+    , cameraRunning(false)
+    , faceCount(0)
 {
     setupUI();
     setupConnections();
     
     // Connect the pure C++ processor to our Qt UI through callback
-    m_frameProcessor->setFrameUpdateCallback([this]() {
+    frameProcessor->setFrameUpdateCallback([this]() {
         // This callback runs in the C++ thread, so we need to post to Qt's event loop
         QMetaObject::invokeMethod(this, "onFrameUpdate", Qt::QueuedConnection);
     });
 }
 
 MainWindow::~MainWindow() {
-    if (m_cameraRunning) {
+    if (cameraRunning) {
         stopCamera();
     }
     // Smart pointer automatically cleans up
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
-    if (m_cameraRunning) {
+    if (cameraRunning) {
         stopCamera();
     }
     event->accept();
 }
 
 void MainWindow::setupUI() {
-    setWindowTitle("Face Detection - Qt UI + Pure C++ Core");
-    setMinimumSize(800, 600);
+    centralWidget = new QWidget(this);
+    setCentralWidget(centralWidget);
     
-    m_centralWidget = new QWidget(this);
-    setCentralWidget(m_centralWidget);
+    QVBoxLayout* mainLayout = new QVBoxLayout(centralWidget);
     
-    QVBoxLayout* mainLayout = new QVBoxLayout(m_centralWidget);
+    // Video display area
+    videoLabel = new QLabel();
+    videoLabel->setMinimumSize(640, 480);
+    videoLabel->setStyleSheet("QLabel { border: 2px solid #ddd; background-color: #f8f9fa; }");
+    videoLabel->setAlignment(Qt::AlignCenter);
+    videoLabel->setText("Camera Feed");
     
-    m_videoLabel = new QLabel();
-    m_videoLabel->setMinimumSize(640, 480);
-    m_videoLabel->setStyleSheet("QLabel { border: 2px solid #ddd; background-color: #f8f9fa; }");
-    m_videoLabel->setAlignment(Qt::AlignCenter);
-    m_videoLabel->setText("Camera Feed");
-    
+    // Control buttons
     QHBoxLayout* controlLayout = new QHBoxLayout();
+    startButton = new QPushButton("Start Camera");
+    startButton->setStyleSheet("QPushButton { background-color: #51cf66; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
+    startButton->setMinimumHeight(40);
     
-    m_startButton = new QPushButton("Start Camera");
-    m_startButton->setStyleSheet("QPushButton { background-color: #51cf66; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
-    m_startButton->setMinimumHeight(40);
+    controlLayout->addWidget(startButton);
     
-    controlLayout->addWidget(m_startButton);
-    controlLayout->addStretch();
+    // Status display
+    statusLabel = new QLabel("Ready");
+    statusLabel->setStyleSheet("QLabel { padding: 5px; background-color: #e9ecef; border-radius: 3px; }");
     
-    m_statusLabel = new QLabel("Ready");
-    m_statusLabel->setStyleSheet("QLabel { padding: 5px; background-color: #e9ecef; border-radius: 3px; }");
-    
-    mainLayout->addWidget(m_videoLabel);
+    mainLayout->addWidget(videoLabel);
     mainLayout->addLayout(controlLayout);
-    mainLayout->addWidget(m_statusLabel);
+    mainLayout->addWidget(statusLabel);
 }
 
 void MainWindow::setupConnections() {
-    connect(m_startButton, &QPushButton::clicked, this, &MainWindow::toggleCamera);
+    connect(startButton, &QPushButton::clicked, this, &MainWindow::toggleCamera);
 }
 
 void MainWindow::toggleCamera() {
-    if (m_cameraRunning) {
+    if (cameraRunning) {
         stopCamera();
     } else {
         startCamera();
@@ -84,71 +82,76 @@ void MainWindow::toggleCamera() {
 }
 
 void MainWindow::startCamera() {
-    m_frameProcessor->startProcessing();
+    if (cameraRunning) {
+        return;
+    }
     
-    if (m_frameProcessor->isProcessing()) {
-        m_cameraRunning = true;
+    // Start the frame processor
+    frameProcessor->startProcessing();
+    
+    if (frameProcessor->isProcessing()) {
+        cameraRunning = true;
         
-        m_startButton->setText("Stop Camera");
-        m_startButton->setStyleSheet("QPushButton { background-color: #ff6b6b; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
-        m_statusLabel->setText("Camera started - Processing frames...");
+        startButton->setText("Stop Camera");
+        startButton->setStyleSheet("QPushButton { background-color: #ff6b6b; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
+        statusLabel->setText("Camera started - Processing frames...");
     } else {
-        QMessageBox::critical(this, "Error", "Could not start camera processing!");
+        statusLabel->setText("Failed to start camera");
     }
 }
 
 void MainWindow::stopCamera() {
-    m_cameraRunning = false;
-    m_frameProcessor->stopProcessing();
-    
-    m_startButton->setText("Start Camera");
-    m_startButton->setStyleSheet("QPushButton { background-color: #51cf66; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
-    m_videoLabel->setText("Camera Feed");
-    m_statusLabel->setText("Camera stopped");
-}
-
-void MainWindow::onFrameUpdate() {
-    if (!m_cameraRunning) {
+    if (!cameraRunning) {
         return;
     }
     
-    // Get the latest processed frame from the pure C++ processor
-    cv::Mat frame = m_frameProcessor->getLatestFrame();
+    cameraRunning = false;
+    frameProcessor->stopProcessing();
+    
+    startButton->setText("Start Camera");
+    startButton->setStyleSheet("QPushButton { background-color: #51cf66; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
+    videoLabel->setText("Camera Feed");
+    statusLabel->setText("Camera stopped");
+}
+
+void MainWindow::onFrameUpdate() {
+    if (!cameraRunning) {
+        return;
+    }
+    
+    // Get the latest processed frame
+    cv::Mat frame = frameProcessor->getLatestFrame();
     
     if (!frame.empty()) {
         updateVideoDisplay(frame);
         
-        // Update face count
-        m_faceCount = m_frameProcessor->getFaceCount();
-        m_statusLabel->setText(QString("Faces detected: %1").arg(m_faceCount));
+        // Update face count display
+        faceCount = frameProcessor->getFaceCount();
+        statusLabel->setText(QString("Faces detected: %1").arg(faceCount));
     }
 }
 
 void MainWindow::updateVideoDisplay(const cv::Mat& frame) {
-    if (frame.empty()) {
-        return;
-    }
+    // Convert OpenCV Mat to QImage
+    QImage qImage = matToQImage(frame);
     
-    QImage qimg = matToQImage(frame);
-    if (qimg.isNull()) {
-        return;
-    }
+    // Convert to QPixmap and scale to fit the label
+    QPixmap pixmap = QPixmap::fromImage(qImage);
+    QPixmap scaledPixmap = pixmap.scaled(videoLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
     
-    QPixmap pixmap = QPixmap::fromImage(qimg);
-    QPixmap scaledPixmap = pixmap.scaled(m_videoLabel->size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    m_videoLabel->setPixmap(scaledPixmap);
+    // Display the image
+    videoLabel->setPixmap(scaledPixmap);
 }
 
 QImage MainWindow::matToQImage(const cv::Mat& mat) const {
-    if (mat.empty()) {
-        return QImage();
+    if (mat.type() == CV_8UC3) {
+        // BGR to RGB conversion
+        cv::Mat rgb;
+        cv::cvtColor(mat, rgb, cv::COLOR_BGR2RGB);
+        
+        QImage img(rgb.data, rgb.cols, rgb.rows, rgb.step, QImage::Format_RGB888);
+        return img.copy(); // Deep copy to ensure data ownership
     }
     
-    cv::Mat rgbMat;
-    cv::cvtColor(mat, rgbMat, cv::COLOR_BGR2RGB);
-    
-    QImage qimg(rgbMat.data, rgbMat.cols, rgbMat.rows, 
-                static_cast<int>(rgbMat.step), QImage::Format_RGB888);
-    
-    return qimg.copy();
+    return QImage();
 }

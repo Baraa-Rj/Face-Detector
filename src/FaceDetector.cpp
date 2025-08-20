@@ -17,7 +17,7 @@ bool FaceDetector::loadClassifier() {
 }
 
 bool FaceDetector::tryLoadClassifierFromPath(const std::string& path) {
-    return m_faceCascade.load(path);
+    return faceCascadeClassifier.load(path);
 }
 
 std::vector<cv::Rect> FaceDetector::detectFaces(const cv::Mat& frame) {
@@ -29,7 +29,7 @@ std::vector<cv::Rect> FaceDetector::detectFaces(const cv::Mat& frame) {
     cv::cvtColor(frame, gray, cv::COLOR_BGR2GRAY);
     
     std::vector<cv::Rect> faces;
-    m_faceCascade.detectMultiScale(
+    faceCascadeClassifier.detectMultiScale(
         gray, 
         faces, 
         1.1,

@@ -35,14 +35,14 @@ private:
     QImage matToQImage(const cv::Mat& mat) const;
 
 private:
-    QWidget* m_centralWidget;
-    QLabel* m_videoLabel;
-    QLabel* m_statusLabel;
-    QPushButton* m_startButton;
+    QWidget* centralWidget;
+    QLabel* videoLabel;
+    QLabel* statusLabel;
+    QPushButton* startButton;
     
     // Use smart pointer for automatic cleanup
-    std::unique_ptr<FrameProcessor> m_frameProcessor;
+    std::unique_ptr<FrameProcessor> frameProcessor;
     
-    bool m_cameraRunning;
-    int m_faceCount;
+    bool cameraRunning;
+    int faceCount;
 };

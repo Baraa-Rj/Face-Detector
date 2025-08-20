@@ -21,8 +21,8 @@ private:
     bool isValidCameraIndex(int cameraIndex) const;
     bool isValidProperty(int property) const;
     
-    cv::VideoCapture m_camera;
-    int m_cameraIndex;
+    cv::VideoCapture videoCapture;
+    int cameraIndex;
     
     static constexpr int MAX_CAMERA_INDEX = 10;
     static constexpr int MIN_FRAME_WIDTH = 320;

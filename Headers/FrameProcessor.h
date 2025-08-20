@@ -34,26 +34,26 @@ private:
     void processFrames();
     bool isValidCameraIndex(int index) const;
     
-    CameraManager m_cameraManager;
-    FaceDetector m_faceDetector;
+    CameraManager cameraManager;
+    FaceDetector faceDetector;
     
     // Thread management (pure C++)
-    std::thread m_processingThread;
-    std::atomic<bool> m_isProcessing;
-    std::atomic<bool> m_shouldStop;
+    std::thread processingThread;
+    std::atomic<bool> processingActive;
+    std::atomic<bool> shouldStop;
     
     // Frame data (protected by mutex)
-    mutable std::mutex m_frameMutex;
-    cv::Mat m_latestFrame;
-    std::vector<cv::Rect> m_latestFaces;
-    int m_faceCount;
+    mutable std::mutex frameMutex;
+    cv::Mat latestFrame;
+    std::vector<cv::Rect> latestFaces;
+    int faceCount;
     
     // Synchronization
-    std::condition_variable m_frameCondition;
+    std::condition_variable frameCondition;
     static constexpr int FRAME_INTERVAL_MS = 33; // ~30 FPS
     static constexpr int MAX_CAMERA_INDEX = 10; // Reasonable limit
     
     // Callback for frame updates
-    std::function<void()> m_frameUpdateCallback;
-    mutable std::mutex m_callbackMutex; // Protect callback access
+    std::function<void()> frameUpdateCallback;
+    mutable std::mutex callbackMutex; // Protect callback access
 };
