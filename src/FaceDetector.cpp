@@ -5,13 +5,11 @@ FaceDetector::FaceDetector() {
 }
 
 bool FaceDetector::loadClassifier() {
-    auto paths = getClassifierPaths();
+    std::string path = "../haarcascade_frontalface_alt.xml";
     
-    for (const auto& path : paths) {
-        if (tryLoadClassifierFromPath(path)) {
-            std::cout << "Loaded classifier from: " << path << std::endl;
-            return true;
-        }
+    if (tryLoadClassifierFromPath(path)) {
+        std::cout << "Loaded classifier from: " << path << std::endl;
+        return true;
     }
     
     std::cerr << "Error: Could not load face cascade classifier!" << std::endl;
@@ -49,10 +47,4 @@ void FaceDetector::drawFaceRectangles(cv::Mat& frame, const std::vector<cv::Rect
     }
 }
 
-std::vector<std::string> FaceDetector::getClassifierPaths() const {
-    return {
-        "haarcascade_frontalface_alt.xml",
-        "../haarcascade_frontalface_alt.xml",
-        "../../haarcascade_frontalface_alt.xml"
-    };
-}
+
