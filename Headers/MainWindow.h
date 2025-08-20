@@ -5,27 +5,25 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
-#include <QTimer>
 #include <QCloseEvent>
 #include <opencv2/opencv.hpp>
 
-#include "FrameProcessor.h"
+// Forward declaration - Qt-free interface
+class FrameProcessor;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
 public:
     explicit MainWindow(QWidget* parent = nullptr);
-    ~MainWindow() = default;
+    ~MainWindow();
 
 protected:
     void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void toggleCamera();
-    void onFrameProcessed();
-    void onProcessingError(const QString& message);
-    void updateDisplay();
+    void onFrameUpdate();
 
 private:
     void setupUI();
@@ -41,8 +39,8 @@ private:
     QLabel* m_statusLabel;
     QPushButton* m_startButton;
     
-    FrameProcessor m_frameProcessor;
-    QTimer m_displayTimer;
+    // Pure C++ processor (no Qt dependencies)
+    FrameProcessor* m_frameProcessor;
     
     bool m_cameraRunning;
     int m_faceCount;

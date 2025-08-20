@@ -1,9 +1,8 @@
 #include "../Headers/CameraManager.h"
-#include <QDebug>
+#include <iostream>
 
-CameraManager::CameraManager(QObject* parent)
-    : QObject(parent)
-    , m_cameraIndex(0)
+CameraManager::CameraManager()
+    : m_cameraIndex(0)
 {
 }
 
@@ -17,7 +16,7 @@ bool CameraManager::openCamera(int cameraIndex) {
     m_camera.open(m_cameraIndex);
     
     if (!m_camera.isOpened()) {
-        emit cameraError(QString("Could not open camera %1").arg(cameraIndex));
+        std::cerr << "Could not open camera " << cameraIndex << std::endl;
         return false;
     }
     

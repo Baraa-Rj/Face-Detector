@@ -1,23 +1,24 @@
 #include "../Headers/FrameProcessor.h"
-#include <QDebug>
-#include <QTimer>
+#include <iostream>
+#include <chrono>
 
-FrameProcessor::FrameProcessor(QObject* parent)
-    : QObject(parent)
-    , m_isProcessing(false)
+FrameProcessor::FrameProcessor()
+    : m_isProcessing(false)
+    , m_shouldStop(false)
     , m_faceCount(0)
+    , m_frameUpdateCallback(nullptr)
 {
     if (!m_faceDetector.loadClassifier()) {
-        qWarning() << "Could not load face cascade classifier!";
+        std::cerr << "Could not load face cascade classifier!" << std::endl;
     }
-    
-    m_processingTimer.setSingleShot(false);
-    m_processingTimer.setInterval(FRAME_INTERVAL_MS);
-    connect(&m_processingTimer, &QTimer::timeout, this, &FrameProcessor::processFrame);
 }
 
 FrameProcessor::~FrameProcessor() {
     stopProcessing();
+    
+    if (m_processingThread.joinable()) {
+        m_processingThread.join();
+    }
     
     if (m_cameraManager.isOpened()) {
         m_cameraManager.closeCamera();
@@ -30,12 +31,15 @@ void FrameProcessor::startProcessing() {
     }
     
     if (!m_cameraManager.openCamera(0)) {
-        emit processingError("Could not open camera!");
+        std::cerr << "Could not open camera!" << std::endl;
         return;
     }
     
     m_isProcessing = true;
-    m_processingTimer.start();
+    m_shouldStop = false;
+    
+    // Start the processing thread
+    m_processingThread = std::thread(&FrameProcessor::processFrames, this);
 }
 
 void FrameProcessor::stopProcessing() {
@@ -43,9 +47,19 @@ void FrameProcessor::stopProcessing() {
         return;
     }
     
+    m_shouldStop = true;
     m_isProcessing = false;
-    m_processingTimer.stop();
+    
+    // Wake up the processing thread if it's waiting
+    m_frameCondition.notify_all();
+    
+    // Close the camera
     m_cameraManager.closeCamera();
+    
+    // Wait for thread to finish
+    if (m_processingThread.joinable()) {
+        m_processingThread.join();
+    }
 }
 
 bool FrameProcessor::isProcessing() const {
@@ -53,42 +67,59 @@ bool FrameProcessor::isProcessing() const {
 }
 
 cv::Mat FrameProcessor::getLatestFrame() const {
-    QMutexLocker locker(&m_frameMutex);
+    std::lock_guard<std::mutex> locker(m_frameMutex);
     return m_latestFrame.clone();
 }
 
 std::vector<cv::Rect> FrameProcessor::getLatestFaces() const {
-    QMutexLocker locker(&m_frameMutex);
+    std::lock_guard<std::mutex> locker(m_frameMutex);
     return m_latestFaces;
 }
 
 int FrameProcessor::getFaceCount() const {
-    QMutexLocker locker(&m_frameMutex);
+    std::lock_guard<std::mutex> locker(m_frameMutex);
     return m_faceCount;
 }
 
-void FrameProcessor::processFrame() {
-    if (!m_isProcessing) {
-        return;
+void FrameProcessor::setFrameUpdateCallback(std::function<void()> callback) {
+    m_frameUpdateCallback = callback;
+}
+
+void FrameProcessor::processFrames() {
+    while (m_isProcessing && !m_shouldStop) {
+        auto startTime = std::chrono::steady_clock::now();
+        
+        // Capture and process frame
+        cv::Mat frame = m_cameraManager.captureFrame();
+        
+        if (!frame.empty()) {
+            std::vector<cv::Rect> faces = m_faceDetector.detectFaces(frame);
+            
+            cv::Mat processedFrame = frame.clone();
+            m_faceDetector.drawFaceRectangles(processedFrame, faces);
+            
+            {
+                std::lock_guard<std::mutex> locker(m_frameMutex);
+                m_latestFrame = processedFrame;
+                m_latestFaces = faces;
+                m_faceCount = static_cast<int>(faces.size());
+            }
+            
+            // Notify through callback if set
+            if (m_frameUpdateCallback) {
+                m_frameUpdateCallback();
+            }
+        }
+        
+        // Calculate time to wait for next frame
+        auto endTime = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        auto waitTime = std::max(0, FRAME_INTERVAL_MS - static_cast<int>(elapsed.count()));
+        
+        // Wait for the next frame interval
+        if (waitTime > 0) {
+            std::unique_lock<std::mutex> locker(m_frameMutex);
+            m_frameCondition.wait_for(locker, std::chrono::milliseconds(waitTime));
+        }
     }
-    
-    cv::Mat frame = m_cameraManager.captureFrame();
-    
-    if (frame.empty()) {
-        return;
-    }
-    
-    std::vector<cv::Rect> faces = m_faceDetector.detectFaces(frame);
-    
-    cv::Mat processedFrame = frame.clone();
-    m_faceDetector.drawFaceRectangles(processedFrame, faces);
-    
-    {
-        QMutexLocker locker(&m_frameMutex);
-        m_latestFrame = processedFrame;
-        m_latestFaces = faces;
-        m_faceCount = static_cast<int>(faces.size());
-    }
-    
-    emit frameProcessed();
 }

@@ -1,13 +1,10 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
-#include <QObject>
 
-class CameraManager : public QObject {
-    Q_OBJECT
-
+class CameraManager {
 public:
-    explicit CameraManager(QObject* parent = nullptr);
+    CameraManager();
     ~CameraManager() = default;
 
     bool openCamera(int cameraIndex = 0);
@@ -19,9 +16,6 @@ public:
     
     bool setCameraProperty(int property, double value);
     double getCameraProperty(int property) const;
-
-signals:
-    void cameraError(const QString& message);
 
 private:
     cv::VideoCapture m_camera;

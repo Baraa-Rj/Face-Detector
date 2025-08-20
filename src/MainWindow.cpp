@@ -1,8 +1,8 @@
 #include "../Headers/MainWindow.h"
+#include "../Headers/FrameProcessor.h"
 #include <QApplication>
 #include <QMessageBox>
 #include <QStatusBar>
-#include <QDebug>
 #include <QCloseEvent>
 
 MainWindow::MainWindow(QWidget* parent)
@@ -11,28 +11,36 @@ MainWindow::MainWindow(QWidget* parent)
     , m_videoLabel(nullptr)
     , m_statusLabel(nullptr)
     , m_startButton(nullptr)
-    , m_frameProcessor(this)
+    , m_frameProcessor(new FrameProcessor())
     , m_cameraRunning(false)
     , m_faceCount(0)
 {
     setupUI();
     setupConnections();
     
-    m_displayTimer.setInterval(16);
-    m_displayTimer.setSingleShot(false);
+    // Connect the pure C++ processor to our Qt UI through callback
+    m_frameProcessor->setFrameUpdateCallback([this]() {
+        // This callback runs in the C++ thread, so we need to post to Qt's event loop
+        QMetaObject::invokeMethod(this, "onFrameUpdate", Qt::QueuedConnection);
+    });
+}
+
+MainWindow::~MainWindow() {
+    if (m_cameraRunning) {
+        stopCamera();
+    }
+    delete m_frameProcessor;
 }
 
 void MainWindow::closeEvent(QCloseEvent* event) {
     if (m_cameraRunning) {
         stopCamera();
     }
-    
-    m_displayTimer.stop();
     event->accept();
 }
 
 void MainWindow::setupUI() {
-    setWindowTitle("Face Detection - Qt + OpenCV (Multi-threaded)");
+    setWindowTitle("Face Detection - Qt UI + Pure C++ Core");
     setMinimumSize(800, 600);
     
     m_centralWidget = new QWidget(this);
@@ -65,9 +73,6 @@ void MainWindow::setupUI() {
 
 void MainWindow::setupConnections() {
     connect(m_startButton, &QPushButton::clicked, this, &MainWindow::toggleCamera);
-    connect(&m_frameProcessor, &FrameProcessor::frameProcessed, this, &MainWindow::onFrameProcessed, Qt::QueuedConnection);
-    connect(&m_frameProcessor, &FrameProcessor::processingError, this, &MainWindow::onProcessingError, Qt::QueuedConnection);
-    connect(&m_displayTimer, &QTimer::timeout, this, &MainWindow::updateDisplay);
 }
 
 void MainWindow::toggleCamera() {
@@ -79,16 +84,14 @@ void MainWindow::toggleCamera() {
 }
 
 void MainWindow::startCamera() {
-    m_frameProcessor.startProcessing();
+    m_frameProcessor->startProcessing();
     
-    if (m_frameProcessor.isProcessing()) {
+    if (m_frameProcessor->isProcessing()) {
         m_cameraRunning = true;
         
         m_startButton->setText("Stop Camera");
         m_startButton->setStyleSheet("QPushButton { background-color: #ff6b6b; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
         m_statusLabel->setText("Camera started - Processing frames...");
-        
-        m_displayTimer.start();
     } else {
         QMessageBox::critical(this, "Error", "Could not start camera processing!");
     }
@@ -96,9 +99,7 @@ void MainWindow::startCamera() {
 
 void MainWindow::stopCamera() {
     m_cameraRunning = false;
-    m_frameProcessor.stopProcessing();
-    
-    m_displayTimer.stop();
+    m_frameProcessor->stopProcessing();
     
     m_startButton->setText("Start Camera");
     m_startButton->setStyleSheet("QPushButton { background-color: #51cf66; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
@@ -106,27 +107,19 @@ void MainWindow::stopCamera() {
     m_statusLabel->setText("Camera stopped");
 }
 
-void MainWindow::onFrameProcessed() {
-    // Frame processed signal received - display update handled by timer
-}
-
-void MainWindow::onProcessingError(const QString& message) {
-    QMessageBox::warning(this, "Processing Error", message);
-    if (m_cameraRunning) {
-        stopCamera();
-    }
-}
-
-void MainWindow::updateDisplay() {
+void MainWindow::onFrameUpdate() {
     if (!m_cameraRunning) {
         return;
     }
     
-    cv::Mat frame = m_frameProcessor.getLatestFrame();
+    // Get the latest processed frame from the pure C++ processor
+    cv::Mat frame = m_frameProcessor->getLatestFrame();
     
     if (!frame.empty()) {
         updateVideoDisplay(frame);
-        m_faceCount = m_frameProcessor.getFaceCount();
+        
+        // Update face count
+        m_faceCount = m_frameProcessor->getFaceCount();
         m_statusLabel->setText(QString("Faces detected: %1").arg(m_faceCount));
     }
 }
