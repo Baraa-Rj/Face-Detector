@@ -1,7 +1,6 @@
 #include "../Headers/FrameProcessor.h"
 #include <iostream>
 #include <chrono>
-#include <stdexcept>
 
 FrameProcessor::FrameProcessor()
     : processingActive(false)
@@ -33,7 +32,6 @@ void FrameProcessor::startProcessing() {
         return;
     }
     
-    // Validate camera index before opening
     if (!isValidCameraIndex(0)) {
         std::cerr << "Invalid camera index: 0" << std::endl;
         return;
@@ -54,7 +52,6 @@ void FrameProcessor::startProcessing() {
     processingActive = true;
     shouldStop = false;
     
-    // Start the processing thread
     processingThread = std::thread(&FrameProcessor::processFrames, this);
 }
 
@@ -66,13 +63,10 @@ void FrameProcessor::stopProcessing() {
     shouldStop = true;
     processingActive = false;
     
-    // Wake up the processing thread if it's waiting
     frameCondition.notify_all();
     
-    // Close the camera
     cameraManager.closeCamera();
     
-    // Wait for thread to finish
     if (processingThread.joinable()) {
         processingThread.join();
     }
@@ -106,26 +100,22 @@ void FrameProcessor::processFrames() {
     while (processingActive && !shouldStop) {
         auto startTime = std::chrono::steady_clock::now();
         
-        // Capture and process frame
         cv::Mat frame = cameraManager.captureFrame();
         
         if (!frame.empty()) {
             std::vector<cv::Rect> faces = faceDetector.detectFaces(frame);
             
-            // Process frame data first, then lock mutex for minimal time
             cv::Mat processedFrame;
-            frame.copyTo(processedFrame); // More efficient than clone()
+            frame.copyTo(processedFrame);
             faceDetector.drawFaceRectangles(processedFrame, faces);
             
-            // Lock mutex only for data update
             {
                 std::lock_guard<std::mutex> locker(frameMutex);
-                latestFrame = std::move(processedFrame); // Use move for efficiency
+                latestFrame = std::move(processedFrame);
                 latestFaces = faces;
                 faceCount = static_cast<int>(faces.size());
             }
             
-            // Safely call callback with protection
             std::function<void()> callback;
             {
                 std::lock_guard<std::mutex> locker(callbackMutex);
@@ -141,12 +131,10 @@ void FrameProcessor::processFrames() {
             }
         }
         
-        // Calculate time to wait for next frame
         auto endTime = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
         auto waitTime = std::max(0, FRAME_INTERVAL_MS - static_cast<int>(elapsed.count()));
         
-        // Wait for the next frame interval
         if (waitTime > 0) {
             std::unique_lock<std::mutex> locker(frameMutex);
             frameCondition.wait_for(locker, std::chrono::milliseconds(waitTime));

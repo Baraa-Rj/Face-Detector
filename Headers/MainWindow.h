@@ -9,7 +9,6 @@
 #include <opencv2/opencv.hpp>
 #include <memory>
 
-// Forward declaration - Qt-free interface
 class FrameProcessor;
 
 class MainWindow : public QMainWindow {
@@ -40,7 +39,6 @@ private:
     QLabel* statusLabel;
     QPushButton* startButton;
     
-    // Use smart pointer for automatic cleanup
     std::unique_ptr<FrameProcessor> frameProcessor;
     
     bool cameraRunning;

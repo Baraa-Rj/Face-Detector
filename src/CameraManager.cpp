@@ -12,12 +12,10 @@ bool CameraManager::isValidCameraIndex(int cameraIndex) const {
 }
 
 bool CameraManager::isValidProperty(int property) const {
-    // Check if property is within valid OpenCV camera property range
-    return property >= 0 && property <= 100; // OpenCV property range
+    return property >= 0 && property <= 100;
 }
 
 bool CameraManager::openCamera(int cameraIndex) {
-    // Input validation
     if (!isValidCameraIndex(cameraIndex)) {
         std::cerr << "Invalid camera index: " << cameraIndex << " (max: " << MAX_CAMERA_INDEX - 1 << ")" << std::endl;
         return false;
@@ -36,7 +34,6 @@ bool CameraManager::openCamera(int cameraIndex) {
         return false;
     }
     
-    // Set camera properties with validation
     if (!videoCapture.set(cv::CAP_PROP_FRAME_WIDTH, 640) ||
         !videoCapture.set(cv::CAP_PROP_FRAME_HEIGHT, 480) ||
         !videoCapture.set(cv::CAP_PROP_FPS, 30)) {
