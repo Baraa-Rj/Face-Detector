@@ -1,0 +1,17 @@
+Loaded classifier from: haarcascade_frontalface_alt.xml
+FrameProcessor constructor completed
+Signal-slot connections established
+MainWindow initialized successfully
+Toggle camera clicked, current state: false
+Starting camera...
+Attempting to open camera...
+CameraManager::openCamera called with index: 0
+Attempting to open camera at index: 0
+[ WARN:0] global ./modules/videoio/src/cap_gstreamer.cpp (2075) handleMessage OpenCV | GStreamer warning: Embedded video playback halted; module v4l2src0 reported: Device '/dev/video0' is busy
+[ WARN:0] global ./modules/videoio/src/cap_gstreamer.cpp (1053) open OpenCV | GStreamer warning: unable to start pipeline
+[ WARN:0] global ./modules/videoio/src/cap_gstreamer.cpp (616) isPipelinePlaying OpenCV | GStreamer warning: GStreamer: pipeline have not been created
+[ WARN:0] global ./modules/videoio/src/cap_v4l.cpp (890) open VIDEOIO(V4L2:/dev/video0): can't open camera by index
+Failed to open camera at index: 0
+Failed to open camera!
+Failed to start camera processing
+Processing error received: "Could not open camera!"

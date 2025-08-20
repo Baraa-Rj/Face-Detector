@@ -1,30 +1,27 @@
 #include "../Headers/FrameProcessor.h"
 #include <QDebug>
-#include <QThread>
-#include <chrono>
+#include <QTimer>
 
 FrameProcessor::FrameProcessor(QObject* parent)
     : QObject(parent)
     , m_isProcessing(false)
-    , m_shouldStop(false)
     , m_faceCount(0)
 {
-    // Move this object to the processing thread
-    this->moveToThread(&m_processingThread);
-    
-    // Connect the thread's started signal to our processing slot
-    connect(&m_processingThread, &QThread::started, this, &FrameProcessor::processFrames);
-    
-    // Load the face detector classifier
     if (!m_faceDetector.loadClassifier()) {
         qWarning() << "Could not load face cascade classifier!";
     }
+    
+    m_processingTimer.setSingleShot(false);
+    m_processingTimer.setInterval(FRAME_INTERVAL_MS);
+    connect(&m_processingTimer, &QTimer::timeout, this, &FrameProcessor::processFrame);
 }
 
 FrameProcessor::~FrameProcessor() {
     stopProcessing();
-    m_processingThread.quit();
-    m_processingThread.wait();
+    
+    if (m_cameraManager.isOpened()) {
+        m_cameraManager.closeCamera();
+    }
 }
 
 void FrameProcessor::startProcessing() {
@@ -38,10 +35,7 @@ void FrameProcessor::startProcessing() {
     }
     
     m_isProcessing = true;
-    m_shouldStop = false;
-    
-    // Start the processing thread
-    m_processingThread.start();
+    m_processingTimer.start();
 }
 
 void FrameProcessor::stopProcessing() {
@@ -49,13 +43,8 @@ void FrameProcessor::stopProcessing() {
         return;
     }
     
-    m_shouldStop = true;
     m_isProcessing = false;
-    
-    // Wake up the processing thread if it's waiting
-    m_frameCondition.wakeAll();
-    
-    // Close the camera
+    m_processingTimer.stop();
     m_cameraManager.closeCamera();
 }
 
@@ -78,41 +67,22 @@ int FrameProcessor::getFaceCount() const {
     return m_faceCount;
 }
 
-void FrameProcessor::processFrames() {
-    while (m_isProcessing && !m_shouldStop) {
-        auto startTime = std::chrono::steady_clock::now();
-        
-        processSingleFrame();
-        
-        // Calculate time to wait for next frame
-        auto endTime = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-        auto waitTime = std::max(0, FRAME_INTERVAL_MS - static_cast<int>(elapsed.count()));
-        
-        // Wait for the next frame interval
-        if (waitTime > 0) {
-            QMutexLocker locker(&m_frameMutex);
-            m_frameCondition.wait(&m_frameMutex, waitTime);
-        }
+void FrameProcessor::processFrame() {
+    if (!m_isProcessing) {
+        return;
     }
-}
-
-void FrameProcessor::processSingleFrame() {
-    // Capture frame from camera
+    
     cv::Mat frame = m_cameraManager.captureFrame();
     
     if (frame.empty()) {
         return;
     }
     
-    // Detect faces in the frame
     std::vector<cv::Rect> faces = m_faceDetector.detectFaces(frame);
     
-    // Draw face rectangles on the frame
     cv::Mat processedFrame = frame.clone();
     m_faceDetector.drawFaceRectangles(processedFrame, faces);
     
-    // Update the shared data (protected by mutex)
     {
         QMutexLocker locker(&m_frameMutex);
         m_latestFrame = processedFrame;
@@ -120,6 +90,5 @@ void FrameProcessor::processSingleFrame() {
         m_faceCount = static_cast<int>(faces.size());
     }
     
-    // Emit signal to notify main thread that new frame is ready
     emit frameProcessed();
 }

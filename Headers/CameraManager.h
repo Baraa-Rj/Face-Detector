@@ -24,8 +24,6 @@ signals:
     void cameraError(const QString& message);
 
 private:
-    bool isCameraValid() const;
-    
     cv::VideoCapture m_camera;
     int m_cameraIndex;
 };

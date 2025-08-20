@@ -1,5 +1,5 @@
 #include "../Headers/CameraManager.h"
-#include <iostream>
+#include <QDebug>
 
 CameraManager::CameraManager(QObject* parent)
     : QObject(parent)
@@ -38,17 +38,12 @@ bool CameraManager::isOpened() const {
     return m_camera.isOpened();
 }
 
-bool CameraManager::isCameraValid() const {
-    return m_camera.isOpened();
-}
-
 cv::Mat CameraManager::captureFrame() {
-    cv::Mat frame;
-    
-    if (!isCameraValid()) {
-        return frame;
+    if (!m_camera.isOpened()) {
+        return cv::Mat();
     }
     
+    cv::Mat frame;
     m_camera >> frame;
     
     if (frame.empty() || frame.cols <= 0 || frame.rows <= 0) {
@@ -59,7 +54,7 @@ cv::Mat CameraManager::captureFrame() {
 }
 
 cv::Size CameraManager::getFrameSize() const {
-    if (!isCameraValid()) {
+    if (!m_camera.isOpened()) {
         return cv::Size(0, 0);
     }
     
@@ -70,7 +65,7 @@ cv::Size CameraManager::getFrameSize() const {
 }
 
 bool CameraManager::setCameraProperty(int property, double value) {
-    if (!isCameraValid()) {
+    if (!m_camera.isOpened()) {
         return false;
     }
     
@@ -78,7 +73,7 @@ bool CameraManager::setCameraProperty(int property, double value) {
 }
 
 double CameraManager::getCameraProperty(int property) const {
-    if (!isCameraValid()) {
+    if (!m_camera.isOpened()) {
         return -1.0;
     }
     

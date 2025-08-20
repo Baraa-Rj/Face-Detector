@@ -2,7 +2,8 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QStatusBar>
-#include <iostream>
+#include <QDebug>
+#include <QCloseEvent>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)
@@ -17,9 +18,17 @@ MainWindow::MainWindow(QWidget* parent)
     setupUI();
     setupConnections();
     
-    // Set up display timer for smooth UI updates
-    m_displayTimer.setInterval(16); // ~60 FPS for UI updates
+    m_displayTimer.setInterval(16);
     m_displayTimer.setSingleShot(false);
+}
+
+void MainWindow::closeEvent(QCloseEvent* event) {
+    if (m_cameraRunning) {
+        stopCamera();
+    }
+    
+    m_displayTimer.stop();
+    event->accept();
 }
 
 void MainWindow::setupUI() {
@@ -56,8 +65,8 @@ void MainWindow::setupUI() {
 
 void MainWindow::setupConnections() {
     connect(m_startButton, &QPushButton::clicked, this, &MainWindow::toggleCamera);
-    connect(&m_frameProcessor, &FrameProcessor::frameProcessed, this, &MainWindow::onFrameProcessed);
-    connect(&m_frameProcessor, &FrameProcessor::processingError, this, &MainWindow::onProcessingError);
+    connect(&m_frameProcessor, &FrameProcessor::frameProcessed, this, &MainWindow::onFrameProcessed, Qt::QueuedConnection);
+    connect(&m_frameProcessor, &FrameProcessor::processingError, this, &MainWindow::onProcessingError, Qt::QueuedConnection);
     connect(&m_displayTimer, &QTimer::timeout, this, &MainWindow::updateDisplay);
 }
 
@@ -79,7 +88,6 @@ void MainWindow::startCamera() {
         m_startButton->setStyleSheet("QPushButton { background-color: #ff6b6b; color: white; padding: 10px; font-size: 14px; border-radius: 5px; }");
         m_statusLabel->setText("Camera started - Processing frames...");
         
-        // Start the display timer for smooth UI updates
         m_displayTimer.start();
     } else {
         QMessageBox::critical(this, "Error", "Could not start camera processing!");
@@ -90,7 +98,6 @@ void MainWindow::stopCamera() {
     m_cameraRunning = false;
     m_frameProcessor.stopProcessing();
     
-    // Stop the display timer
     m_displayTimer.stop();
     
     m_startButton->setText("Start Camera");
@@ -100,9 +107,7 @@ void MainWindow::stopCamera() {
 }
 
 void MainWindow::onFrameProcessed() {
-    // This slot is called when a new frame is processed
-    // The actual display update happens in the timer-based updateDisplay method
-    // for smooth UI updates
+    // Frame processed signal received - display update handled by timer
 }
 
 void MainWindow::onProcessingError(const QString& message) {
@@ -117,13 +122,10 @@ void MainWindow::updateDisplay() {
         return;
     }
     
-    // Get the latest processed frame from the frame processor
     cv::Mat frame = m_frameProcessor.getLatestFrame();
     
     if (!frame.empty()) {
         updateVideoDisplay(frame);
-        
-        // Update face count
         m_faceCount = m_frameProcessor.getFaceCount();
         m_statusLabel->setText(QString("Faces detected: %1").arg(m_faceCount));
     }

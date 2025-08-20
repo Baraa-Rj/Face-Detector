@@ -6,6 +6,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QTimer>
+#include <QCloseEvent>
 #include <opencv2/opencv.hpp>
 
 #include "FrameProcessor.h"
@@ -16,6 +17,9 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow() = default;
+
+protected:
+    void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void toggleCamera();

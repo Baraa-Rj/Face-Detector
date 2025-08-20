@@ -1,9 +1,8 @@
 #pragma once
 
 #include <QObject>
-#include <QThread>
+#include <QTimer>
 #include <QMutex>
-#include <QWaitCondition>
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <atomic>
@@ -28,22 +27,19 @@ public:
     int getFaceCount() const;
 
 public slots:
-    void processFrames();
+    void processFrame();
 
 signals:
     void frameProcessed();
     void processingError(const QString& message);
 
 private:
-    void processSingleFrame();
-    
     CameraManager m_cameraManager;
     FaceDetector m_faceDetector;
     
-    // Thread management
-    QThread m_processingThread;
+    // Timer-based processing
+    QTimer m_processingTimer;
     std::atomic<bool> m_isProcessing;
-    std::atomic<bool> m_shouldStop;
     
     // Frame data (protected by mutex)
     mutable QMutex m_frameMutex;
@@ -51,7 +47,5 @@ private:
     std::vector<cv::Rect> m_latestFaces;
     int m_faceCount;
     
-    // Synchronization
-    QWaitCondition m_frameCondition;
     static constexpr int FRAME_INTERVAL_MS = 33; // ~30 FPS
 };
