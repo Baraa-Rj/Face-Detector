@@ -33,18 +33,14 @@ private:
     CameraManager cameraManager;
     FaceDetector faceDetector;
     
-    // Threads
     std::thread captureThread;
     std::thread processingThread;
     
-    // Control flags
     std::atomic<bool> processingActive;
     std::atomic<bool> shouldStop;
     
-    // Frame counter
     std::atomic<int> frameCounter;
     
-    // Single frame buffer for sequential processing
     mutable std::mutex frameBufferMutex;
     cv::Mat currentFrame;
     bool frameReady;
@@ -52,16 +48,13 @@ private:
     std::condition_variable frameReadyCondition;
     std::condition_variable frameProcessedCondition;
     
-    // Final processed results
     mutable std::mutex processedFrameMutex;
     cv::Mat latestFrame;
     std::vector<cv::Rect> latestFaces;
     int faceCount;
     
-    // Timing control
     static constexpr int FRAME_INTERVAL_MS = 33;
     
-    // Callback mechanism
     std::function<void()> frameUpdateCallback;
     mutable std::mutex callbackMutex;
 };

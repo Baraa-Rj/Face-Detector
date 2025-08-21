@@ -53,7 +53,6 @@ void FrameProcessor::startProcessing() {
     frameReady = false;
     frameProcessed = true;
     
-    // Start both threads
     captureThread = std::thread(&FrameProcessor::frameCaptureThread, this);
     processingThread = std::thread(&FrameProcessor::frameProcessingThread, this);
 }
@@ -66,7 +65,6 @@ void FrameProcessor::stopProcessing() {
     shouldStop = true;
     processingActive = false;
     
-    // Notify both threads to wake up and check shouldStop
     frameReadyCondition.notify_all();
     frameProcessedCondition.notify_all();
     
@@ -106,27 +104,23 @@ void FrameProcessor::setFrameUpdateCallback(std::function<void()> callback) {
 }
 
 void FrameProcessor::drawFrameNumber(cv::Mat& frame, int frameNumber) {
-    // Convert frame number to string
     std::string frameText = "Frame: " + std::to_string(frameNumber);
     
-    // Set text properties
     int fontFace = cv::FONT_HERSHEY_SIMPLEX;
     double fontScale = 1.0;
     int thickness = 2;
-    cv::Scalar color(0, 255, 0); // Green color
+    cv::Scalar color(0, 255, 0);
     
-    // Position text in upper left corner with some padding
     cv::Point textPosition(20, 40);
     
-    // Draw the frame number text
     cv::putText(frame, frameText, textPosition, fontFace, fontScale, color, thickness);
 }
 
 void FrameProcessor::frameCaptureThread() {
     while (processingActive && !shouldStop) {
-        // Wait for the previous frame to be processed
         {
             std::unique_lock<std::mutex> locker(frameBufferMutex);
+            
             frameProcessedCondition.wait(locker, [this]() {
                 return frameProcessed || shouldStop;
             });
@@ -136,11 +130,9 @@ void FrameProcessor::frameCaptureThread() {
             }
         }
         
-        // Capture a new frame
         cv::Mat frame = cameraManager.captureFrame();
         
         if (!frame.empty()) {
-            // Store the frame and mark it as ready for processing
             {
                 std::lock_guard<std::mutex> locker(frameBufferMutex);
                 currentFrame = std::move(frame);
@@ -148,18 +140,15 @@ void FrameProcessor::frameCaptureThread() {
                 frameProcessed = false;
             }
             
-            // Notify processing thread that new frame is ready
             frameReadyCondition.notify_one();
         }
         
-        // Control frame rate
         std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_INTERVAL_MS));
     }
 }
 
 void FrameProcessor::frameProcessingThread() {
     while (processingActive && !shouldStop) {
-        // Wait for a frame to be available
         {
             std::unique_lock<std::mutex> locker(frameBufferMutex);
             
@@ -172,7 +161,6 @@ void FrameProcessor::frameProcessingThread() {
             }
         }
         
-        // Process the current frame
         cv::Mat frameToProcess;
         {
             std::lock_guard<std::mutex> locker(frameBufferMutex);
@@ -180,35 +168,31 @@ void FrameProcessor::frameProcessingThread() {
         }
         
         if (!frameToProcess.empty()) {
-            // Increment frame counter
             int currentFrameNumber = ++frameCounter;
             
-            // Process the frame for face detection
             std::vector<cv::Rect> faces = faceDetector.detectFaces(frameToProcess);
             
-            // Draw face rectangles and frame number directly on the frame
-            faceDetector.drawFaceRectangles(frameToProcess, faces);
-            drawFrameNumber(frameToProcess, currentFrameNumber);
+            cv::Mat processedFrame;
+            frameToProcess.copyTo(processedFrame);
+            faceDetector.drawFaceRectangles(processedFrame, faces);
             
-            // Update the latest processed frame and results
+            drawFrameNumber(processedFrame, currentFrameNumber);
+            
             {
                 std::lock_guard<std::mutex> locker(processedFrameMutex);
-                latestFrame = std::move(frameToProcess);
+                latestFrame = std::move(processedFrame);
                 latestFaces = faces;
                 faceCount = static_cast<int>(faces.size());
             }
             
-            // Mark frame as processed
             {
                 std::lock_guard<std::mutex> locker(frameBufferMutex);
                 frameReady = false;
                 frameProcessed = true;
             }
             
-            // Notify capture thread that processing is complete
             frameProcessedCondition.notify_one();
             
-            // Notify UI thread about the update
             std::function<void()> callback;
             {
                 std::lock_guard<std::mutex> locker(callbackMutex);
