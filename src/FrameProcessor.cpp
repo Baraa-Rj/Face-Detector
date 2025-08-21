@@ -5,6 +5,7 @@
 FrameProcessor::FrameProcessor()
     : processingActive(false)
     , shouldStop(false)
+    , frameCounter(0)
     , frameReady(false)
     , frameProcessed(true)
     , faceCount(0)
@@ -57,6 +58,7 @@ void FrameProcessor::startProcessing() {
     
     processingActive = true;
     shouldStop = false;
+    frameCounter = 0;
     frameReady = false;
     frameProcessed = true;
     
@@ -110,6 +112,33 @@ int FrameProcessor::getFaceCount() const {
 void FrameProcessor::setFrameUpdateCallback(std::function<void()> callback) {
     std::lock_guard<std::mutex> locker(callbackMutex);
     frameUpdateCallback = callback;
+}
+
+void FrameProcessor::drawFrameNumber(cv::Mat& frame, int frameNumber) {
+    // Convert frame number to string
+    std::string frameText = "Frame: " + std::to_string(frameNumber);
+    
+    // Set text properties
+    int fontFace = cv::FONT_HERSHEY_SIMPLEX;
+    double fontScale = 1.0;
+    int thickness = 2;
+    cv::Scalar color(0, 255, 0); // Green color
+    
+    // Get text size to position it properly
+    int baseline = 0;
+    cv::Size textSize = cv::getTextSize(frameText, fontFace, fontScale, thickness, &baseline);
+    
+    // Position text in upper left corner with some padding
+    cv::Point textPosition(20, 40);
+    
+    // Draw black background rectangle for better visibility
+    cv::rectangle(frame, 
+                  cv::Point(textPosition.x - 5, textPosition.y - textSize.height - 5),
+                  cv::Point(textPosition.x + textSize.width + 5, textPosition.y + 5),
+                  cv::Scalar(0, 0, 0), -1);
+    
+    // Draw the frame number text
+    cv::putText(frame, frameText, textPosition, fontFace, fontScale, color, thickness);
 }
 
 void FrameProcessor::frameCaptureThread() {
@@ -170,6 +199,9 @@ void FrameProcessor::frameProcessingThread() {
         }
         
         if (!frameToProcess.empty()) {
+            // Increment frame counter
+            int currentFrameNumber = ++frameCounter;
+            
             // Process the frame for face detection
             std::vector<cv::Rect> faces = faceDetector.detectFaces(frameToProcess);
             
@@ -177,6 +209,9 @@ void FrameProcessor::frameProcessingThread() {
             cv::Mat processedFrame;
             frameToProcess.copyTo(processedFrame);
             faceDetector.drawFaceRectangles(processedFrame, faces);
+            
+            // Draw frame number on the processed frame
+            drawFrameNumber(processedFrame, currentFrameNumber);
             
             // Update the latest processed frame and results
             {

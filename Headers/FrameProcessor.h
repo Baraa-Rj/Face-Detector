@@ -32,6 +32,7 @@ private:
     void frameCaptureThread();
     void frameProcessingThread();
     bool isValidCameraIndex(int index) const;
+    void drawFrameNumber(cv::Mat& frame, int frameNumber);
     
     CameraManager cameraManager;
     FaceDetector faceDetector;
@@ -43,6 +44,9 @@ private:
     // Control flags
     std::atomic<bool> processingActive;
     std::atomic<bool> shouldStop;
+    
+    // Frame counter
+    std::atomic<int> frameCounter;
     
     // Single frame buffer for sequential processing
     mutable std::mutex frameBufferMutex;
