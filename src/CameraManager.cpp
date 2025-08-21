@@ -1,6 +1,5 @@
 #include "../Headers/CameraManager.h"
 #include <iostream>
-#include <stdexcept>
 
 CameraManager::CameraManager()
     : cameraIndex(0)
@@ -9,10 +8,6 @@ CameraManager::CameraManager()
 
 bool CameraManager::isValidCameraIndex(int cameraIndex) const {
     return cameraIndex >= 0 && cameraIndex < MAX_CAMERA_INDEX;
-}
-
-bool CameraManager::isValidProperty(int property) const {
-    return property >= 0 && property <= 100;
 }
 
 bool CameraManager::openCamera(int cameraIndex) {
@@ -66,43 +61,4 @@ cv::Mat CameraManager::captureFrame() {
     }
     
     return frame;
-}
-
-cv::Size CameraManager::getFrameSize() const {
-    if (!videoCapture.isOpened()) {
-        return cv::Size(0, 0);
-    }
-    
-    return cv::Size(
-        static_cast<int>(videoCapture.get(cv::CAP_PROP_FRAME_WIDTH)),
-        static_cast<int>(videoCapture.get(cv::CAP_PROP_FRAME_HEIGHT))
-    );
-}
-
-bool CameraManager::setCameraProperty(int property, double value) {
-    if (!isValidProperty(property)) {
-        std::cerr << "Invalid camera property: " << property << std::endl;
-        return false;
-    }
-    
-    if (!videoCapture.isOpened()) {
-        std::cerr << "Camera is not opened" << std::endl;
-        return false;
-    }
-    
-    return videoCapture.set(property, value);
-}
-
-double CameraManager::getCameraProperty(int property) const {
-    if (!isValidProperty(property)) {
-        std::cerr << "Invalid camera property: " << property << std::endl;
-        return -1.0;
-    }
-    
-    if (!videoCapture.isOpened()) {
-        std::cerr << "Camera is not opened" << std::endl;
-        return -1.0;
-    }
-    
-    return videoCapture.get(property);
 }

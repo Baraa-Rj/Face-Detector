@@ -30,17 +30,8 @@ FrameProcessor::~FrameProcessor() {
     }
 }
 
-bool FrameProcessor::isValidCameraIndex(int index) const {
-    return index >= 0 && index < MAX_CAMERA_INDEX;
-}
-
 void FrameProcessor::startProcessing() {
     if (processingActive) {
-        return;
-    }
-    
-    if (!isValidCameraIndex(0)) {
-        std::cerr << "Invalid camera index: 0" << std::endl;
         return;
     }
     
@@ -152,7 +143,7 @@ void FrameProcessor::frameCaptureThread() {
             // Store the frame and mark it as ready for processing
             {
                 std::lock_guard<std::mutex> locker(frameBufferMutex);
-                currentFrame = frame.clone();
+                currentFrame = std::move(frame);
                 frameReady = true;
                 frameProcessed = false;
             }
@@ -185,7 +176,7 @@ void FrameProcessor::frameProcessingThread() {
         cv::Mat frameToProcess;
         {
             std::lock_guard<std::mutex> locker(frameBufferMutex);
-            frameToProcess = currentFrame.clone();
+            frameToProcess = std::move(currentFrame);
         }
         
         if (!frameToProcess.empty()) {
@@ -195,18 +186,14 @@ void FrameProcessor::frameProcessingThread() {
             // Process the frame for face detection
             std::vector<cv::Rect> faces = faceDetector.detectFaces(frameToProcess);
             
-            // Draw face rectangles on the processed frame
-            cv::Mat processedFrame;
-            frameToProcess.copyTo(processedFrame);
-            faceDetector.drawFaceRectangles(processedFrame, faces);
-            
-            // Draw frame number on the processed frame
-            drawFrameNumber(processedFrame, currentFrameNumber);
+            // Draw face rectangles and frame number directly on the frame
+            faceDetector.drawFaceRectangles(frameToProcess, faces);
+            drawFrameNumber(frameToProcess, currentFrameNumber);
             
             // Update the latest processed frame and results
             {
                 std::lock_guard<std::mutex> locker(processedFrameMutex);
-                latestFrame = std::move(processedFrame);
+                latestFrame = std::move(frameToProcess);
                 latestFaces = faces;
                 faceCount = static_cast<int>(faces.size());
             }

@@ -3,7 +3,7 @@
 #include <QApplication>
 #include <QImage>
 #include <QPixmap>
-#include <iostream>
+#include <opencv2/opencv.hpp>
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent)

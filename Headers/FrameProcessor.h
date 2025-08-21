@@ -1,14 +1,11 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
-#include <vector>
-#include <string>
 #include <atomic>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
 #include <functional>
-#include <limits>
 
 #include "FaceDetector.h"
 #include "CameraManager.h"
@@ -31,7 +28,6 @@ public:
 private:
     void frameCaptureThread();
     void frameProcessingThread();
-    bool isValidCameraIndex(int index) const;
     void drawFrameNumber(cv::Mat& frame, int frameNumber);
     
     CameraManager cameraManager;
@@ -64,7 +60,6 @@ private:
     
     // Timing control
     static constexpr int FRAME_INTERVAL_MS = 33;
-    static constexpr int MAX_CAMERA_INDEX = 10;
     
     // Callback mechanism
     std::function<void()> frameUpdateCallback;
