@@ -1,15 +1,19 @@
 # Real-Time Face Detection with Qt + OpenCV
 
-A modern C++ Qt application that performs real-time face detection using your webcam and OpenCV's Haar cascade classifier with a professional GUI interface.
+A high-performance C++ Qt application that performs real-time face detection using your webcam and OpenCV's Haar cascade classifier with a professional GUI interface and multi-threaded architecture.
 
 ## Features
 
-- **Modern Qt GUI**: Professional interface with controls and real-time display
-- **Real-time Detection**: Live webcam face detection using OpenCV
-- **Adjustable Settings**: Sliders for detection sensitivity tuning
-- **Visual Feedback**: Green rectangles around detected faces
-- **Status Display**: Real-time face count and system status
-- **Modular Design**: Clean separation of concerns with low coupling
+- **Modern Qt GUI**: Professional interface with real-time camera feed display
+- **Multi-threaded Architecture**: Separate threads for frame capture and processing
+- **Sequential Processing**: One-by-one frame processing ensuring no frames are lost
+- **Frame Numbering**: Visual frame counter to verify sequential processing
+- **Real-time Detection**: Live webcam face detection using OpenCV Haar cascades
+- **Visual Feedback**: Green rectangles around detected faces with frame numbers
+- **Status Display**: Real-time face count and processing status
+- **Optimized Performance**: Memory-efficient frame handling with move semantics
+- **Thread Safety**: Comprehensive mutex protection and safe cross-thread communication
+- **Loose Coupling**: Qt GUI separated from pure C++ core logic
 
 ## Requirements
 
@@ -37,16 +41,16 @@ qmake6 --version
 
 ## Compilation
 
-### Unified Build System
+### Build System
 
-The project now uses a single build system for both versions:
+The project uses CMake with Qt6 and OpenCV integration:
 
 #### Using build script (Recommended)
 ```bash
 ./build.sh
 ```
 
-This will build both the console and Qt GUI versions (if Qt6 is available).
+This will create a `build/` directory and compile the Qt GUI application.
 
 #### Manual CMake build
 ```bash
@@ -58,36 +62,21 @@ cd build
 cmake ..
 make
 
-# Available executables:
-# - face_detection (console version)
-# - face_detection_qt (Qt GUI version, if Qt6 found)
-```
-
-#### Manual compilation (Console only)
-```bash
-g++ -std=c++17 -Wall -Wextra \
-    $(pkg-config --cflags opencv4) \
-    -o face_detection main.cpp \
-    $(pkg-config --libs opencv4)
+# Executable created: face_detection
 ```
 
 ## Usage
 
-### Console Version
+### Qt GUI Application
 1. Make sure your webcam is connected and accessible
-2. Run the compiled executable: `./face_detection`
-3. The program will open your webcam and start detecting faces
-4. Green rectangles will be drawn around detected faces
-5. Press 'q' to quit the program
-
-### Qt GUI Version
-1. Make sure your webcam is connected and accessible
-2. Run the compiled executable: `./face_detection_qt`
+2. Run the compiled executable: `./build/face_detection`
 3. A GUI window will open with camera controls
 4. Click "Start Camera" to begin face detection
-5. Adjust detection sensitivity using the sliders
-6. Real-time face count is displayed in the status bar
-7. Close the window to quit the program
+5. Watch the frame counter in the upper-left corner of the video feed
+6. Green rectangles will be drawn around detected faces
+7. Real-time face count is displayed in the status bar
+8. The application uses sequential processing - each frame is processed one by one
+9. Click "Stop Camera" or close the window to quit
 
 ## Troubleshooting
 
@@ -97,11 +86,9 @@ g++ -std=c++17 -Wall -Wextra \
 - Try different camera indices (change `cv::VideoCapture cap(0)` to `cap(1)`, etc.)
 
 ### Classifier not loading
-- The program looks for `haarcascade_frontalface_alt.xml` in the OpenCV samples directory
-- If you get an error, download the classifier file manually:
-  ```bash
-  wget https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalface_alt.xml
-  ```
+- The program looks for `haarcascade_frontalface_alt.xml` in the project root directory
+- This file is already included in the repository
+- If you get an error, ensure the file exists in the same directory as the executable
 
 ### Compilation errors
 - Ensure OpenCV is properly installed: `pkg-config --modversion opencv4`
@@ -110,7 +97,7 @@ g++ -std=c++17 -Wall -Wextra \
 
 ## Project Structure
 
-The project uses a modular design with low coupling between components, organized in a clean directory structure:
+The project uses a multi-threaded, modular design with loose coupling between components:
 
 ### Directory Organization
 ```
@@ -118,12 +105,14 @@ faceDetection/
 ├── Headers/                    # Header files (.h)
 │   ├── MainWindow.h           # Main GUI window interface
 │   ├── FaceDetector.h         # Face detection interface
-│   └── CameraManager.h        # Camera operations interface
+│   ├── CameraManager.h        # Camera operations interface
+│   └── FrameProcessor.h       # Multi-threaded frame processing
 ├── src/                        # Source files (.cpp)
 │   ├── main.cpp               # Application entry point
 │   ├── MainWindow.cpp         # Main GUI window implementation
 │   ├── FaceDetector.cpp       # Face detection implementation
-│   └── CameraManager.cpp      # Camera operations implementation
+│   ├── CameraManager.cpp      # Camera operations implementation
+│   └── FrameProcessor.cpp     # Multi-threaded frame processing
 ├── CMakeLists.txt              # Qt + OpenCV build configuration
 ├── build.sh                    # Build script
 ├── haarcascade_frontalface_alt.xml  # Face detection classifier
@@ -131,41 +120,53 @@ faceDetection/
 ```
 
 ### Core Classes
-- **MainWindow**: Main GUI window and user interface
+- **MainWindow**: Qt GUI interface and user interactions
+- **FrameProcessor**: Multi-threaded frame capture and processing coordinator
 - **FaceDetector**: Face detection logic and OpenCV integration
 - **CameraManager**: Camera operations and video capture
 
 ### Architecture Benefits
-- **Low Coupling**: Each class has a single responsibility
-- **High Cohesion**: Related functionality grouped together
-- **Easy Testing**: Components can be tested independently
-- **Maintainable**: Changes to one component don't affect others
+- **Multi-threaded**: Separate threads for capture and processing
+- **Sequential Processing**: Ensures every frame is processed in order
+- **Loose Coupling**: Qt GUI separated from C++ core logic
+- **Thread Safety**: Comprehensive mutex protection
+- **Memory Efficient**: Optimized frame handling with move semantics
+- **Maintainable**: Clean separation of concerns
 
 ## Class Responsibilities
 
+### FrameProcessor
+- Manages two separate threads for capture and processing
+- Implements sequential frame processing with thread synchronization
+- Handles frame buffering and cross-thread communication
+- Provides thread-safe callbacks to the GUI layer
+- Coordinates between camera and face detection components
+
 ### FaceDetector
 - Loads and manages Haar cascade classifier
-- Processes frames for face detection
-- Draws detection rectangles
-- Configurable detection parameters
+- Processes frames for face detection using OpenCV
+- Draws detection rectangles on processed frames
+- Optimized for real-time performance
 
 ### CameraManager
-- Manages camera lifecycle (open/close)
-- Captures video frames
-- Handles camera errors and properties
-- Emits Qt signals for camera events
+- Manages camera lifecycle (open/close/capture)
+- Handles camera initialization and properties
+- Provides reliable frame capture with error handling
+- Validates camera access and availability
 
 ### MainWindow
 - Creates and manages Qt GUI interface
-- Handles user interactions (buttons, sliders)
-- Displays video feed and detection results
-- Coordinates between camera and detector components
+- Handles user interactions (start/stop camera)
+- Displays real-time video feed with frame numbers
+- Shows detection results and status information
+- Communicates with FrameProcessor via safe callbacks
 
 ## Key Technologies Used
 
-- **Qt6**: Modern GUI framework with signals/slots
-- **OpenCV**: Computer vision and camera operations
-- **C++17**: Modern C++ features and RAII principles
+- **Qt6**: Modern GUI framework with signals/slots and cross-thread communication
+- **OpenCV**: Computer vision library for face detection and camera operations
+- **C++17**: Modern C++ with threading, mutexes, condition variables, and move semantics
+- **Multi-threading**: Producer-consumer pattern with thread-safe synchronization
 
 ## License
 
