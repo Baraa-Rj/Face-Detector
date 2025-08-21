@@ -9,7 +9,6 @@
 #include <condition_variable>
 #include <functional>
 #include <limits>
-#include <queue>
 
 #include "FaceDetector.h"
 #include "CameraManager.h"
@@ -45,12 +44,15 @@ private:
     std::atomic<bool> processingActive;
     std::atomic<bool> shouldStop;
     
-    // Thread-safe queues
-    mutable std::mutex rawFrameMutex;
-    std::queue<cv::Mat> rawFrameQueue;
-    std::condition_variable rawFrameCondition;
-    static constexpr size_t MAX_RAW_FRAMES = 5; // Limit queue size
+    // Single frame buffer for sequential processing
+    mutable std::mutex frameBufferMutex;
+    cv::Mat currentFrame;
+    bool frameReady;
+    bool frameProcessed;
+    std::condition_variable frameReadyCondition;
+    std::condition_variable frameProcessedCondition;
     
+    // Final processed results
     mutable std::mutex processedFrameMutex;
     cv::Mat latestFrame;
     std::vector<cv::Rect> latestFaces;

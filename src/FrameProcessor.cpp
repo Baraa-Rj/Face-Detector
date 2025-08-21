@@ -5,6 +5,8 @@
 FrameProcessor::FrameProcessor()
     : processingActive(false)
     , shouldStop(false)
+    , frameReady(false)
+    , frameProcessed(true)
     , faceCount(0)
     , frameUpdateCallback(nullptr)
 {
@@ -55,6 +57,8 @@ void FrameProcessor::startProcessing() {
     
     processingActive = true;
     shouldStop = false;
+    frameReady = false;
+    frameProcessed = true;
     
     // Start both threads
     captureThread = std::thread(&FrameProcessor::frameCaptureThread, this);
@@ -70,7 +74,8 @@ void FrameProcessor::stopProcessing() {
     processingActive = false;
     
     // Notify both threads to wake up and check shouldStop
-    rawFrameCondition.notify_all();
+    frameReadyCondition.notify_all();
+    frameProcessedCondition.notify_all();
     
     cameraManager.closeCamera();
     
@@ -109,65 +114,59 @@ void FrameProcessor::setFrameUpdateCallback(std::function<void()> callback) {
 
 void FrameProcessor::frameCaptureThread() {
     while (processingActive && !shouldStop) {
-        auto startTime = std::chrono::steady_clock::now();
-        
-        // Check if camera is still open
-        if (!cameraManager.isOpened()) {
-            std::cerr << "Camera is not open in capture thread!" << std::endl;
-            break;
-        }
-        
-        cv::Mat frame = cameraManager.captureFrame();
-        
-        if (!frame.empty()) {
-            // Add frame to the raw frame queue
-            {
-                std::lock_guard<std::mutex> locker(rawFrameMutex);
-                
-                // Limit queue size to prevent memory issues
-                if (rawFrameQueue.size() >= MAX_RAW_FRAMES) {
-                    rawFrameQueue.pop(); // Remove oldest frame
-                }
-                
-                rawFrameQueue.push(frame.clone());
-            }
-            
-            // Notify processing thread that new frame is available
-            rawFrameCondition.notify_one();
-        }
-        
-        // Control frame rate
-        auto endTime = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-        auto waitTime = std::max(0, FRAME_INTERVAL_MS - static_cast<int>(elapsed.count()));
-        
-        if (waitTime > 0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(waitTime));
-        }
-    }
-}
-
-void FrameProcessor::frameProcessingThread() {
-    while (processingActive && !shouldStop) {
-        cv::Mat frameToProcess;
-        
-        // Wait for a frame to be available
+        // Wait for the previous frame to be processed
         {
-            std::unique_lock<std::mutex> locker(rawFrameMutex);
-            
-            // Wait for frame or stop signal
-            rawFrameCondition.wait(locker, [this]() {
-                return !rawFrameQueue.empty() || shouldStop;
+            std::unique_lock<std::mutex> locker(frameBufferMutex);
+            frameProcessedCondition.wait(locker, [this]() {
+                return frameProcessed || shouldStop;
             });
             
             if (shouldStop) {
                 break;
             }
-            
-            if (!rawFrameQueue.empty()) {
-                frameToProcess = rawFrameQueue.front();
-                rawFrameQueue.pop();
+        }
+        
+        // Capture a new frame
+        cv::Mat frame = cameraManager.captureFrame();
+        
+        if (!frame.empty()) {
+            // Store the frame and mark it as ready for processing
+            {
+                std::lock_guard<std::mutex> locker(frameBufferMutex);
+                currentFrame = frame.clone();
+                frameReady = true;
+                frameProcessed = false;
             }
+            
+            // Notify processing thread that new frame is ready
+            frameReadyCondition.notify_one();
+        }
+        
+        // Control frame rate
+        std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_INTERVAL_MS));
+    }
+}
+
+void FrameProcessor::frameProcessingThread() {
+    while (processingActive && !shouldStop) {
+        // Wait for a frame to be available
+        {
+            std::unique_lock<std::mutex> locker(frameBufferMutex);
+            
+            frameReadyCondition.wait(locker, [this]() {
+                return frameReady || shouldStop;
+            });
+            
+            if (shouldStop) {
+                break;
+            }
+        }
+        
+        // Process the current frame
+        cv::Mat frameToProcess;
+        {
+            std::lock_guard<std::mutex> locker(frameBufferMutex);
+            frameToProcess = currentFrame.clone();
         }
         
         if (!frameToProcess.empty()) {
@@ -186,6 +185,16 @@ void FrameProcessor::frameProcessingThread() {
                 latestFaces = faces;
                 faceCount = static_cast<int>(faces.size());
             }
+            
+            // Mark frame as processed
+            {
+                std::lock_guard<std::mutex> locker(frameBufferMutex);
+                frameReady = false;
+                frameProcessed = true;
+            }
+            
+            // Notify capture thread that processing is complete
+            frameProcessedCondition.notify_one();
             
             // Notify UI thread about the update
             std::function<void()> callback;
