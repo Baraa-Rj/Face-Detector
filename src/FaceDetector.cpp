@@ -5,7 +5,7 @@ FaceDetector::FaceDetector() {
 }
 
 bool FaceDetector::loadClassifier() {
-    std::string path = "../haarcascade_frontalface_alt.xml";
+    std::string path = "haarcascade_frontalface_alt.xml";
     
     if (tryLoadClassifierFromPath(path)) {
         std::cout << "Loaded classifier from: " << path << std::endl;

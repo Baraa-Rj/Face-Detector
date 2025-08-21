@@ -9,6 +9,7 @@
 #include <condition_variable>
 #include <functional>
 #include <limits>
+#include <queue>
 
 #include "FaceDetector.h"
 #include "CameraManager.h"
@@ -29,25 +30,37 @@ public:
     void setFrameUpdateCallback(std::function<void()> callback);
 
 private:
-    void processFrames();
+    void frameCaptureThread();
+    void frameProcessingThread();
     bool isValidCameraIndex(int index) const;
     
     CameraManager cameraManager;
     FaceDetector faceDetector;
     
+    // Threads
+    std::thread captureThread;
     std::thread processingThread;
+    
+    // Control flags
     std::atomic<bool> processingActive;
     std::atomic<bool> shouldStop;
     
-    mutable std::mutex frameMutex;
+    // Thread-safe queues
+    mutable std::mutex rawFrameMutex;
+    std::queue<cv::Mat> rawFrameQueue;
+    std::condition_variable rawFrameCondition;
+    static constexpr size_t MAX_RAW_FRAMES = 5; // Limit queue size
+    
+    mutable std::mutex processedFrameMutex;
     cv::Mat latestFrame;
     std::vector<cv::Rect> latestFaces;
     int faceCount;
     
-    std::condition_variable frameCondition;
+    // Timing control
     static constexpr int FRAME_INTERVAL_MS = 33;
     static constexpr int MAX_CAMERA_INDEX = 10;
     
+    // Callback mechanism
     std::function<void()> frameUpdateCallback;
     mutable std::mutex callbackMutex;
 };
