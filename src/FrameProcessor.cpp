@@ -124,18 +124,8 @@ void FrameProcessor::drawFrameNumber(cv::Mat& frame, int frameNumber) {
     int thickness = 2;
     cv::Scalar color(0, 255, 0); // Green color
     
-    // Get text size to position it properly
-    int baseline = 0;
-    cv::Size textSize = cv::getTextSize(frameText, fontFace, fontScale, thickness, &baseline);
-    
     // Position text in upper left corner with some padding
     cv::Point textPosition(20, 40);
-    
-    // Draw black background rectangle for better visibility
-    cv::rectangle(frame, 
-                  cv::Point(textPosition.x - 5, textPosition.y - textSize.height - 5),
-                  cv::Point(textPosition.x + textSize.width + 5, textPosition.y + 5),
-                  cv::Scalar(0, 0, 0), -1);
     
     // Draw the frame number text
     cv::putText(frame, frameText, textPosition, fontFace, fontScale, color, thickness);
