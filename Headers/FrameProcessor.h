@@ -6,6 +6,9 @@
 #include <mutex>
 #include <condition_variable>
 #include <functional>
+#include <queue>
+#include <vector>
+#include <future>
 
 #include "FaceDetector.h"
 #include "CameraManager.h"
@@ -27,33 +30,35 @@ public:
 
 private:
     void frameCaptureThread();
-    void frameProcessingThread();
+    void frameProcessingWorker();
     void drawFrameNumber(cv::Mat& frame, int frameNumber);
     
     CameraManager cameraManager;
     FaceDetector faceDetector;
     
     std::thread captureThread;
-    std::thread processingThread;
+    std::vector<std::thread> processingWorkers;
     
     std::atomic<bool> processingActive;
     std::atomic<bool> shouldStop;
     
     std::atomic<int> frameCounter;
     
-    mutable std::mutex frameBufferMutex;
-    cv::Mat currentFrame;
-    bool frameReady;
-    bool frameProcessed;
-    std::condition_variable frameReadyCondition;
-    std::condition_variable frameProcessedCondition;
+    // Thread-safe frame queue for parallel processing
+    mutable std::mutex frameQueueMutex;
+    std::queue<cv::Mat> frameQueue;
+    std::condition_variable frameQueueCondition;
+    static constexpr size_t MAX_QUEUE_SIZE = 10; // Prevent memory overflow
     
-    mutable std::mutex processedFrameMutex;
+    // Thread-safe results storage
+    mutable std::mutex resultsMutex;
     cv::Mat latestFrame;
     std::vector<cv::Rect> latestFaces;
     int faceCount;
     
-    static constexpr int FRAME_INTERVAL_MS = 33;
+    // Thread pool control
+    static constexpr int NUM_PROCESSING_THREADS = 4; // Use multiple cores
+    static constexpr int FRAME_INTERVAL_MS = 100;
     
     std::function<void()> frameUpdateCallback;
     mutable std::mutex callbackMutex;
