@@ -113,6 +113,11 @@ void FrameProcessor::setFrameUpdateCallback(std::function<void()> callback) {
 }
 
 void FrameProcessor::drawFrameNumber(cv::Mat& frame, int frameNumber) {
+    // SECURITY FIX: Validate input parameters
+    if (frame.empty() || frame.rows <= 0 || frame.cols <= 0) {
+        return;
+    }
+    
     std::string frameText = "Frame: " + std::to_string(frameNumber);
     
     int fontFace = cv::FONT_HERSHEY_SIMPLEX;
@@ -122,7 +127,16 @@ void FrameProcessor::drawFrameNumber(cv::Mat& frame, int frameNumber) {
     
     cv::Point textPosition(20, 40);
     
-    cv::putText(frame, frameText, textPosition, fontFace, fontScale, color, thickness);
+    // SECURITY FIX: Validate text position is within frame bounds
+    if (textPosition.x >= 0 && textPosition.y >= 0 && 
+        textPosition.x < frame.cols && textPosition.y < frame.rows) {
+        
+        try {
+            cv::putText(frame, frameText, textPosition, fontFace, fontScale, color, thickness);
+        } catch (const cv::Exception& e) {
+            std::cerr << "Error drawing frame number: " << e.what() << std::endl;
+        }
+    }
 }
 
 void FrameProcessor::frameCaptureThread() {
@@ -133,8 +147,9 @@ void FrameProcessor::frameCaptureThread() {
             {
                 std::lock_guard<std::mutex> locker(frameQueueMutex);
                 
-                // Remove old frames if queue is full to prevent memory overflow
-                while (frameQueue.size() >= MAX_QUEUE_SIZE) {
+                // CRITICAL FIX: Prevent memory overflow by limiting queue size
+                if (frameQueue.size() >= MAX_QUEUE_SIZE) {
+                    // Remove oldest frame to make space (FIFO behavior)
                     frameQueue.pop();
                 }
                 
@@ -164,6 +179,7 @@ void FrameProcessor::frameProcessingWorker() {
                 break;
             }
             
+            // SECURITY FIX: Double-check queue is not empty after wakeup
             if (!frameQueue.empty()) {
                 frameToProcess = std::move(frameQueue.front());
                 frameQueue.pop();
