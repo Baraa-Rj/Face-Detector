@@ -6,8 +6,8 @@ A high-performance C++ Qt application that performs real-time face detection usi
 
 - **Modern Qt GUI**: Professional interface with real-time camera feed display
 - **Multi-threaded Architecture**: Separate threads for frame capture and processing
-- **Sequential Processing**: One-by-one frame processing ensuring no frames are lost
-- **Frame Numbering**: Visual frame counter to verify sequential processing
+- **Parallel Processing**: Multi-threaded frame processing using a thread pool for improved performance
+- **Frame Numbering**: Visual frame counter to verify processing order
 - **Real-time Detection**: Live webcam face detection using OpenCV Haar cascades
 - **Visual Feedback**: Green rectangles around detected faces with frame numbers
 - **Status Display**: Real-time face count and processing status
@@ -75,7 +75,7 @@ make
 5. Watch the frame counter in the upper-left corner of the video feed
 6. Green rectangles will be drawn around detected faces
 7. Real-time face count is displayed in the status bar
-8. The application uses sequential processing - each frame is processed one by one
+8. The application uses parallel processing - multiple frames can be processed simultaneously using a thread pool
 9. Click "Stop Camera" or close the window to quit
 
 ## Troubleshooting
@@ -127,20 +127,22 @@ faceDetection/
 
 ### Architecture Benefits
 - **Multi-threaded**: Separate threads for capture and processing
-- **Sequential Processing**: Ensures every frame is processed in order
+- **Parallel Processing**: Thread pool allows multiple frames to be processed simultaneously
 - **Loose Coupling**: Qt GUI separated from C++ core logic
-- **Thread Safety**: Comprehensive mutex protection
-- **Memory Efficient**: Optimized frame handling with move semantics
+- **Thread Safety**: Comprehensive mutex protection and thread-safe queues
+- **Memory Efficient**: Optimized frame handling with move semantics and overflow protection
 - **Maintainable**: Clean separation of concerns
+- **High Performance**: Utilizes multiple CPU cores for improved throughput
 
 ## Class Responsibilities
 
 ### FrameProcessor
-- Manages two separate threads for capture and processing
-- Implements sequential frame processing with thread synchronization
-- Handles frame buffering and cross-thread communication
+- Manages capture thread and a pool of processing worker threads
+- Implements parallel frame processing with thread pool architecture
+- Handles thread-safe frame queuing with overflow protection
 - Provides thread-safe callbacks to the GUI layer
 - Coordinates between camera and face detection components
+- Utilizes multiple CPU cores for improved performance
 
 ### FaceDetector
 - Loads and manages Haar cascade classifier
@@ -166,7 +168,7 @@ faceDetection/
 - **Qt6**: Modern GUI framework with signals/slots and cross-thread communication
 - **OpenCV**: Computer vision library for face detection and camera operations
 - **C++17**: Modern C++ with threading, mutexes, condition variables, and move semantics
-- **Multi-threading**: Producer-consumer pattern with thread-safe synchronization
+- **Multi-threading**: Thread pool pattern with parallel frame processing and thread-safe synchronization
 
 ## License
 
