@@ -51,10 +51,8 @@ void FrameProcessor::startProcessing() {
     shouldStop = false;
     frameCounter = 0;
     
-    // Start capture thread
     captureThread = std::thread(&FrameProcessor::frameCaptureThread, this);
     
-    // Start multiple processing worker threads
     processingWorkers.clear();
     for (int i = 0; i < NUM_PROCESSING_THREADS; ++i) {
         processingWorkers.emplace_back(&FrameProcessor::frameProcessingWorker, this);
@@ -113,7 +111,6 @@ void FrameProcessor::setFrameUpdateCallback(std::function<void()> callback) {
 }
 
 void FrameProcessor::drawFrameNumber(cv::Mat& frame, int frameNumber) {
-    // SECURITY FIX: Validate input parameters
     if (frame.empty() || frame.rows <= 0 || frame.cols <= 0) {
         return;
     }
@@ -127,7 +124,6 @@ void FrameProcessor::drawFrameNumber(cv::Mat& frame, int frameNumber) {
     
     cv::Point textPosition(20, 40);
     
-    // SECURITY FIX: Validate text position is within frame bounds
     if (textPosition.x >= 0 && textPosition.y >= 0 && 
         textPosition.x < frame.cols && textPosition.y < frame.rows) {
         
@@ -147,9 +143,7 @@ void FrameProcessor::frameCaptureThread() {
             {
                 std::lock_guard<std::mutex> locker(frameQueueMutex);
                 
-                // CRITICAL FIX: Prevent memory overflow by limiting queue size
                 if (frameQueue.size() >= MAX_QUEUE_SIZE) {
-                    // Remove oldest frame to make space (FIFO behavior)
                     frameQueue.pop();
                 }
                 
@@ -159,7 +153,6 @@ void FrameProcessor::frameCaptureThread() {
             frameQueueCondition.notify_one();
         }
         
-        // Small delay to control frame rate
         std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_INTERVAL_MS));
     }
 }
@@ -179,7 +172,6 @@ void FrameProcessor::frameProcessingWorker() {
                 break;
             }
             
-            // SECURITY FIX: Double-check queue is not empty after wakeup
             if (!frameQueue.empty()) {
                 frameToProcess = std::move(frameQueue.front());
                 frameQueue.pop();
@@ -189,7 +181,6 @@ void FrameProcessor::frameProcessingWorker() {
         if (!frameToProcess.empty()) {
             int currentFrameNumber = ++frameCounter;
             
-            // Process frame for face detection (this is the computationally intensive part)
             std::vector<cv::Rect> faces = faceDetector.detectFaces(frameToProcess);
             
             cv::Mat processedFrame;
@@ -198,7 +189,6 @@ void FrameProcessor::frameProcessingWorker() {
             
             drawFrameNumber(processedFrame, currentFrameNumber);
             
-            // Update results atomically
             {
                 std::lock_guard<std::mutex> locker(resultsMutex);
                 latestFrame = std::move(processedFrame);
@@ -206,7 +196,6 @@ void FrameProcessor::frameProcessingWorker() {
                 faceCount = static_cast<int>(faces.size());
             }
             
-            // Notify UI thread about the update
             std::function<void()> callback;
             {
                 std::lock_guard<std::mutex> locker(callbackMutex);

@@ -44,20 +44,17 @@ private:
     
     std::atomic<int> frameCounter;
     
-    // Thread-safe frame queue for parallel processing
     mutable std::mutex frameQueueMutex;
     std::queue<cv::Mat> frameQueue;
     std::condition_variable frameQueueCondition;
-    static constexpr size_t MAX_QUEUE_SIZE = 10; // Prevent memory overflow
+    static constexpr size_t MAX_QUEUE_SIZE = 10;
     
-    // Thread-safe results storage
     mutable std::mutex resultsMutex;
     cv::Mat latestFrame;
     std::vector<cv::Rect> latestFaces;
     int faceCount;
     
-    // Thread pool control
-    static constexpr int NUM_PROCESSING_THREADS = 4; // Use multiple cores
+    static constexpr int NUM_PROCESSING_THREADS = 4;
     static constexpr int FRAME_INTERVAL_MS = 100;
     
     std::function<void()> frameUpdateCallback;

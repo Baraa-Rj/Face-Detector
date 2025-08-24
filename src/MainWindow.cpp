@@ -114,14 +114,12 @@ void MainWindow::onFrameUpdate() {
     
     cv::Mat frame = frameProcessor->getLatestFrame();
     
-    // SECURITY FIX: Validate frame before processing
     if (!frame.empty() && frame.rows > 0 && frame.cols > 0) {
         updateVideoDisplay(frame);
         
         faceCount = frameProcessor->getFaceCount();
         statusLabel->setText(QString("Faces detected: %1").arg(faceCount));
     } else {
-        // Handle invalid frame gracefully
         statusLabel->setText("Camera error - Invalid frame received");
     }
 }
@@ -136,7 +134,6 @@ void MainWindow::updateVideoDisplay(const cv::Mat& frame) {
 }
 
 QImage MainWindow::matToQImage(const cv::Mat& mat) const {
-    // SECURITY FIX: Validate input matrix
     if (mat.empty() || mat.rows <= 0 || mat.cols <= 0) {
         return QImage();
     }
@@ -147,10 +144,8 @@ QImage MainWindow::matToQImage(const cv::Mat& mat) const {
             cv::cvtColor(mat, rgb, cv::COLOR_BGR2RGB);
         } catch (const cv::Exception& e) {
             std::cerr << "Error converting BGR to RGB: " << e.what() << std::endl;
-            return QImage();
         }
         
-        // SECURITY FIX: Validate converted matrix
         if (rgb.empty() || rgb.rows <= 0 || rgb.cols <= 0) {
             return QImage();
         }

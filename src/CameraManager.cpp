@@ -11,7 +11,6 @@ bool CameraManager::isValidCameraIndex(int cameraIndex) const {
 }
 
 bool CameraManager::openCamera(int cameraIndex) {
-    // SECURITY FIX: Validate camera index
     if (!isValidCameraIndex(cameraIndex)) {
         std::cerr << "Invalid camera index: " << cameraIndex << " (max: " << MAX_CAMERA_INDEX - 1 << ")" << std::endl;
         return false;
@@ -19,7 +18,6 @@ bool CameraManager::openCamera(int cameraIndex) {
     
     this->cameraIndex = cameraIndex;
     
-    // SECURITY FIX: Properly close existing camera before opening new one
     if (videoCapture.isOpened()) {
         videoCapture.release();
     }
@@ -36,7 +34,6 @@ bool CameraManager::openCamera(int cameraIndex) {
         return false;
     }
     
-    // SECURITY FIX: Set camera properties with error checking
     bool propertiesSet = true;
     if (!videoCapture.set(cv::CAP_PROP_FRAME_WIDTH, 640)) {
         std::cerr << "Warning: Could not set frame width" << std::endl;
@@ -69,7 +66,6 @@ bool CameraManager::isOpened() const {
 }
 
 cv::Mat CameraManager::captureFrame() {
-    // SECURITY FIX: Check if camera is opened
     if (!videoCapture.isOpened()) {
         return cv::Mat();
     }
@@ -82,7 +78,6 @@ cv::Mat CameraManager::captureFrame() {
         return cv::Mat();
     }
     
-    // SECURITY FIX: Validate captured frame
     if (frame.empty() || frame.rows <= 0 || frame.cols <= 0) {
         return cv::Mat();
     }

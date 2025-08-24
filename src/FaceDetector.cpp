@@ -7,7 +7,6 @@ FaceDetector::FaceDetector() {
 bool FaceDetector::loadClassifier() {
     std::string path = "haarcascade_frontalface_alt.xml";
     
-    // SECURITY FIX: Check if file exists before trying to load
     if (tryLoadClassifierFromPath(path)) {
         std::cout << "Loaded classifier from: " << path << std::endl;
         return true;
@@ -19,7 +18,6 @@ bool FaceDetector::loadClassifier() {
 }
 
 bool FaceDetector::tryLoadClassifierFromPath(const std::string& path) {
-    // SECURITY FIX: Validate path
     if (path.empty()) {
         std::cerr << "Error: Empty classifier path" << std::endl;
         return false;
@@ -34,12 +32,10 @@ bool FaceDetector::tryLoadClassifierFromPath(const std::string& path) {
 }
 
 std::vector<cv::Rect> FaceDetector::detectFaces(const cv::Mat& frame) {
-    // SECURITY FIX: Validate input frame
     if (frame.empty() || frame.rows <= 0 || frame.cols <= 0) {
         return {};
     }
     
-    // SECURITY FIX: Check if classifier is loaded
     if (faceCascadeClassifier.empty()) {
         std::cerr << "Warning: Face classifier not loaded, skipping detection" << std::endl;
         return {};
@@ -72,13 +68,11 @@ std::vector<cv::Rect> FaceDetector::detectFaces(const cv::Mat& frame) {
 }
 
 void FaceDetector::drawFaceRectangles(cv::Mat& frame, const std::vector<cv::Rect>& faces) const {
-    // SECURITY FIX: Validate input parameters
     if (frame.empty() || frame.rows <= 0 || frame.cols <= 0) {
         return;
     }
     
     for (const auto& face : faces) {
-        // SECURITY FIX: Validate rectangle bounds
         if (face.x >= 0 && face.y >= 0 && 
             face.x + face.width <= frame.cols && 
             face.y + face.height <= frame.rows &&
