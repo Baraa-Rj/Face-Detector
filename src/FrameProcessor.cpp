@@ -2,16 +2,28 @@
 #include <iostream>
 #include <chrono>
 
-FrameProcessor::FrameProcessor()
+FrameProcessor::FrameProcessor(FrameSource frameSource, int frameIntervalMs)
     : processingActive(false)
     , shouldStop(false)
     , frameCounter(0)
     , faceCount(0)
     , frameUpdateCallback(nullptr)
+    , frameSource(std::move(frameSource))
+    , frameIntervalMs(frameIntervalMs)
+    , workerDetectors(NUM_PROCESSING_THREADS)
 {
-    if (!faceDetector.loadClassifier()) {
+    if (!loadWorkerClassifiers()) {
         std::cerr << "Failed to load face detector classifier!" << std::endl;
     }
+}
+
+bool FrameProcessor::loadWorkerClassifiers() {
+    for (auto& detector : workerDetectors) {
+        if (!detector.loadClassifier()) {
+            return false;
+        }
+    }
+    return true;
 }
 
 FrameProcessor::~FrameProcessor() {
@@ -35,14 +47,14 @@ void FrameProcessor::startProcessing() {
         return;
     }
     
-    if (!cameraManager.isOpened()) {
+    if (!frameSource && !cameraManager.isOpened()) {
         if (!cameraManager.openCamera(0)) {
             std::cerr << "Failed to open camera!" << std::endl;
             return;
         }
     }
     
-    if (!faceDetector.loadClassifier()) {
+    if (!loadWorkerClassifiers()) {
         std::cerr << "Failed to load face detector classifier!" << std::endl;
         return;
     }
@@ -55,7 +67,7 @@ void FrameProcessor::startProcessing() {
     
     processingWorkers.clear();
     for (int i = 0; i < NUM_PROCESSING_THREADS; ++i) {
-        processingWorkers.emplace_back(&FrameProcessor::frameProcessingWorker, this);
+        processingWorkers.emplace_back(&FrameProcessor::frameProcessingWorker, this, i);
     }
     
     std::cout << "Started " << NUM_PROCESSING_THREADS << " processing threads for parallel execution" << std::endl;
@@ -110,6 +122,11 @@ void FrameProcessor::setFrameUpdateCallback(std::function<void()> callback) {
     frameUpdateCallback = callback;
 }
 
+void FrameProcessor::setFacesDetectedCallback(FacesCallback callback) {
+    std::lock_guard<std::mutex> locker(callbackMutex);
+    facesDetectedCallback = callback;
+}
+
 void FrameProcessor::drawFrameNumber(cv::Mat& frame, int frameNumber) {
     if (frame.empty() || frame.rows <= 0 || frame.cols <= 0) {
         return;
@@ -137,7 +154,7 @@ void FrameProcessor::drawFrameNumber(cv::Mat& frame, int frameNumber) {
 
 void FrameProcessor::frameCaptureThread() {
     while (processingActive && !shouldStop) {
-        cv::Mat frame = cameraManager.captureFrame();
+        cv::Mat frame = frameSource ? frameSource() : cameraManager.captureFrame();
         
         if (!frame.empty()) {
             {
@@ -150,11 +167,15 @@ void FrameProcessor::frameCaptureThread() {
             frameQueueCondition.notify_one();
         }
         
-        std::this_thread::sleep_for(std::chrono::milliseconds(FRAME_INTERVAL_MS));
+        if (frameIntervalMs > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(frameIntervalMs));
+        }
     }
 }
 
-void FrameProcessor::frameProcessingWorker() {
+void FrameProcessor::frameProcessingWorker(int workerIndex) {
+    FaceDetector& faceDetector = workerDetectors[workerIndex];
+    
     while (processingActive && !shouldStop) {
         cv::Mat frameToProcess;
         
@@ -194,9 +215,15 @@ void FrameProcessor::frameProcessingWorker() {
             }
             
             std::function<void()> callback;
+            FacesCallback facesCallback;
             {
                 std::lock_guard<std::mutex> locker(callbackMutex);
                 callback = frameUpdateCallback;
+                facesCallback = facesDetectedCallback;
+            }
+            
+            if (facesCallback) {
+                facesCallback(frameToProcess, faces);
             }
             
             if (callback) {

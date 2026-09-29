@@ -57,3 +57,20 @@ add_test(NAME classifier_path_from_repo_root COMMAND test_classifier_path
          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME classifier_path_from_build_dir COMMAND test_classifier_path
          WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+
+add_executable(test_parallel_detection
+    tests/test_parallel_detection.cpp
+    src/FaceDetector.cpp
+    src/CameraManager.cpp
+    src/FrameProcessor.cpp
+)
+target_link_libraries(test_parallel_detection ${OpenCV_LIBS} pthread)
+target_include_directories(test_parallel_detection PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/Headers
+    ${OpenCV_INCLUDE_DIRS}
+)
+target_compile_definitions(test_parallel_detection PRIVATE
+    FACE_CASCADE_PATH="${FACE_CASCADE_FILE}"
+    TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data"
+)
+add_test(NAME parallel_detection COMMAND test_parallel_detection)
