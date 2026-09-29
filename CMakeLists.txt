@@ -74,3 +74,17 @@ target_compile_definitions(test_parallel_detection PRIVATE
     TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data"
 )
 add_test(NAME parallel_detection COMMAND test_parallel_detection)
+
+add_executable(test_queue_bound
+    tests/test_queue_bound.cpp
+    src/FaceDetector.cpp
+    src/CameraManager.cpp
+    src/FrameProcessor.cpp
+)
+target_link_libraries(test_queue_bound ${OpenCV_LIBS} pthread)
+target_include_directories(test_queue_bound PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/Headers
+    ${OpenCV_INCLUDE_DIRS}
+)
+target_compile_definitions(test_queue_bound PRIVATE FACE_CASCADE_PATH="${FACE_CASCADE_FILE}")
+add_test(NAME queue_bound COMMAND test_queue_bound)

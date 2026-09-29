@@ -160,7 +160,10 @@ void FrameProcessor::frameCaptureThread() {
             {
                 std::lock_guard<std::mutex> locker(frameQueueMutex);
                 
-              
+                if (frameQueue.size() >= MAX_QUEUE_SIZE) {
+                    frameQueue.pop();
+                }
+                
                 frameQueue.push(std::move(frame));
             }
             
