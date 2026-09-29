@@ -36,7 +36,7 @@ bool CameraManager::openCamera(int cameraIndex) {
     
     if (!videoCapture.set(cv::CAP_PROP_FRAME_WIDTH, 640) ||
         !videoCapture.set(cv::CAP_PROP_FRAME_HEIGHT, 480) ||
-        !videoCapture.set(cv::CAP_PROP_FPS, 1)) {
+        !videoCapture.set(cv::CAP_PROP_FPS, 30)) {
         std::cerr << "Warning: Could not set all camera properties" << std::endl;
     }
     
