@@ -22,7 +22,12 @@ bool CameraManager::openCamera(int cameraIndex) {
         videoCapture.release();
     }
     
-    videoCapture.open(cameraIndex);
+    try {
+        videoCapture.open(cameraIndex);
+    } catch (const cv::Exception& e) {
+        std::cerr << "Exception opening camera " << cameraIndex << ": " << e.what() << std::endl;
+        return false;
+    }
     
     if (!videoCapture.isOpened()) {
         std::cerr << "Could not open camera " << cameraIndex << std::endl;
@@ -54,7 +59,12 @@ cv::Mat CameraManager::captureFrame() {
     }
     
     cv::Mat frame;
-    videoCapture >> frame;
+    try {
+        videoCapture >> frame;
+    } catch (const cv::Exception& e) {
+        std::cerr << "Exception capturing frame: " << e.what() << std::endl;
+        return cv::Mat();
+    }
     
     if (frame.empty()) {
         return cv::Mat();

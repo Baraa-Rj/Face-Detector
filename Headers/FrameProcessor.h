@@ -15,7 +15,11 @@
 
 class FrameProcessor {
 public:
-    FrameProcessor();
+    using FrameSource = std::function<cv::Mat()>;
+    using FacesCallback = std::function<void(const cv::Mat& frame, const std::vector<cv::Rect>& faces)>;
+
+    // frameSource replaces the camera when set; an empty Mat means "no frame yet".
+    explicit FrameProcessor(FrameSource frameSource = nullptr, int frameIntervalMs = FRAME_INTERVAL_MS);
     ~FrameProcessor();
 
     void startProcessing();
@@ -27,14 +31,18 @@ public:
     int getFaceCount() const;
     
     void setFrameUpdateCallback(std::function<void()> callback);
+    // Called by a worker for every processed frame with the input frame and its faces.
+    void setFacesDetectedCallback(FacesCallback callback);
 
 private:
     void frameCaptureThread();
-    void frameProcessingWorker();
+    void frameProcessingWorker(int workerIndex);
+    bool loadWorkerClassifiers();
     void drawFrameNumber(cv::Mat& frame, int frameNumber);
     
     CameraManager cameraManager;
-    FaceDetector faceDetector;
+    // One detector per worker: cv::CascadeClassifier is not thread-safe.
+    std::vector<FaceDetector> workerDetectors;
     
     std::thread captureThread;
     std::vector<std::thread> processingWorkers;
@@ -58,5 +66,9 @@ private:
     static constexpr int FRAME_INTERVAL_MS = 100;
     
     std::function<void()> frameUpdateCallback;
+    FacesCallback facesDetectedCallback;
     mutable std::mutex callbackMutex;
+    
+    FrameSource frameSource;
+    int frameIntervalMs;
 };

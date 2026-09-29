@@ -4,15 +4,24 @@
 FaceDetector::FaceDetector() {
 }
 
+#ifndef FACE_CASCADE_PATH
+#define FACE_CASCADE_PATH "haarcascade_frontalface_alt.xml"
+#endif
+
 bool FaceDetector::loadClassifier() {
-    std::string path = "../haarcascade_frontalface_alt.xml";
+    const std::vector<std::string> paths = {
+        FACE_CASCADE_PATH,
+        "haarcascade_frontalface_alt.xml"
+    };
     
-    if (tryLoadClassifierFromPath(path)) {
-        std::cout << "Loaded classifier from: " << path << std::endl;
-        return true;
+    for (const auto& path : paths) {
+        if (tryLoadClassifierFromPath(path)) {
+            std::cout << "Loaded classifier from: " << path << std::endl;
+            return true;
+        }
     }
     
-    std::cerr << "Error: Could not load face cascade classifier from: " << path << std::endl;
+    std::cerr << "Error: Could not load face cascade classifier from: " << paths.front() << std::endl;
     std::cerr << "Please ensure the classifier file exists in the project directory." << std::endl;
     return false;
 }
